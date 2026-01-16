@@ -1,5 +1,11 @@
 #!/bin/sh
 
 pushd build
-gcc -o sdlamp2 -Wall -O0 -ggdb3 ../src/sdlamp2.c `sdl2-config --cflags --libs`
+
+gcc -Wall -O0 -ggdb3 \
+  -o sdlamp2 \
+  `sdl2-config --cflags --libs` \
+  -lSDL2_image \
+  ../src/sdlamp2.c
+
 popd
