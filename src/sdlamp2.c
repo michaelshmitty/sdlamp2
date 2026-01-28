@@ -78,7 +78,7 @@ static SDL_bool decode_audio() {
   }
 
   printf("Audio stream: %d channels, sample rate %d\n",
-         pLocalCodecParameters->ch_layout.nb_channels, pLocalCodecParameters->sample_rate);
+         pLocalCodecParameters->channels, pLocalCodecParameters->sample_rate);
 
   const AVCodec* pLocalCodec = avcodec_find_decoder(pLocalCodecParameters->codec_id);
   printf("Codec: %s ID %d bit_rate %lld\n", pLocalCodec->long_name, pLocalCodec->id,
@@ -95,7 +95,7 @@ static SDL_bool decode_audio() {
   stream = NULL;
   wavlen = 0;
 
-  stream = SDL_NewAudioStream(AUDIO_F32, pLocalCodecParameters->ch_layout.nb_channels,
+  stream = SDL_NewAudioStream(AUDIO_F32, pLocalCodecParameters->channels,
                               pLocalCodecParameters->sample_rate, AUDIO_F32, 2, 48000);
   if (!stream) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Couldn't create audio stream!", SDL_GetError(),
