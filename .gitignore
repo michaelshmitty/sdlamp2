@@ -3,4 +3,5 @@
 *.mp3
 *.m4a
 positions.txt
+.claude/
 
