@@ -37,3 +37,17 @@ This document specifies the functional requirements for an SDL2 based media play
 - Keep a changelog in this functional specification document
 
 ## 5. Changelog
+
+### 2026-02-10 — Full implementation of audio player features
+
+- **Streaming decoder**: Replaced fire-and-forget `decode_audio()` with a persistent `Decoder` struct that streams audio on demand via `decoder_pump()`. Uses `libswresample` (`swr_alloc_set_opts2`) to convert from the decoder's native format (e.g. planar float) to interleaved float stereo 48kHz. Fixes the sped-up/distorted audio bug and eliminates the multi-GB memory spike for long files.
+- **Seeking**: Rewind (10s back) and fast-forward (10s ahead) via `av_seek_frame()` with codec buffer flush and audio pipeline clear. Clamped to file bounds.
+- **Play/Stop separation**: Removed play/pause toggle. Play always resumes, stop always pauses in place and saves position. No icon toggling.
+- **Position persistence**: Saves/loads playback position per file in `positions.txt` (tab-separated) in the audio directory. Position saved on stop, quit, and file switch. Restored on file open.
+- **File selection**: Scans audio directory for `.m4a`, `.mp3`, `.wav`, `.ogg` files. Sorted alphabetically. 5th button ("next tape") cycles through files. Window title shows current filename.
+- **Album art**: Extracts embedded cover art (`AV_DISPOSITION_ATTACHED_PIC`) and displays it scaled with preserved aspect ratio in the upper portion of the window.
+- **Progress bar**: Gray bar between album art and controls showing playback position relative to duration.
+- **Command-line argument**: First argument sets audio directory (defaults to current working directory).
+- **Error handling**: Non-fatal errors (stream ops, corrupt files) use `fprintf(stderr)` and continue. Corrupt files are skipped when switching. Fatal errors (SDL init, window, audio device) still abort. Proper cleanup order on exit.
+- **EOF handling**: When a file plays to the end, playback auto-pauses and resets to the start.
+- **Removed dead code**: `load_audio_file()`, `wavbuf`/`wavlen`/`wavspec` globals.
