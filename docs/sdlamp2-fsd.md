@@ -38,6 +38,14 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 5. Changelog
 
+### 2026-02-10 — Volume control and d-pad/keyboard navigation
+
+- **Cursor-based navigation**: Replaced mouse input with a focus-highlight model. Arrow keys (Left/Right) and d-pad move a visible blue highlight between UI elements; Enter/A button activates the focused button. Designed for use on a handheld gaming device with no mouse.
+- **App-level volume control**: Float samples are scaled by a volume factor (0–100%) before being queued to the audio device. Volume slider rendered as a vertical bar to the left of the transport buttons, using the same gray palette as the progress bar.
+- **Volume persistence**: Volume level saved to `volume.txt` in the audio directory. Defaults to 50% on first run. Loaded on startup, saved on quit and on every adjustment.
+- **SDL_GameController support**: Uses `SDL_INIT_GAMECONTROLLER` and the `SDL_GameController` API to normalize d-pad input across hardware. Hot-plug support via `SDL_CONTROLLERDEVICEADDED/REMOVED`. Keyboard (arrow keys + Enter) works identically for desktop testing.
+- **Removed mouse input**: `SDL_MOUSEBUTTONDOWN` handler removed entirely; all interaction is now via keyboard or gamepad.
+
 ### 2026-02-10 — Full implementation of audio player features
 
 - **Streaming decoder**: Replaced fire-and-forget `decode_audio()` with a persistent `Decoder` struct that streams audio on demand via `decoder_pump()`. Uses `libswresample` (`swr_alloc_set_opts2`) to convert from the decoder's native format (e.g. planar float) to interleaved float stereo 48kHz. Fixes the sped-up/distorted audio bug and eliminates the multi-GB memory spike for long files.

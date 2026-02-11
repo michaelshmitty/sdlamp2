@@ -52,6 +52,20 @@ static char audio_files[MAX_FILES][256];
 static int num_audio_files = 0;
 static int current_file_index = 0;
 
+/* --- Focus / navigation --- */
+
+#define FOCUS_VOLUME 0
+#define FOCUS_REWIND 1
+#define FOCUS_STOP 2
+#define FOCUS_PLAY 3
+#define FOCUS_FF 4
+#define FOCUS_NEXT 5
+#define FOCUS_COUNT 6
+
+static float volume = 0.5f;
+static int focus_index = FOCUS_PLAY;
+static SDL_GameController* controller = NULL;
+
 /* --- Utility --- */
 
 static void panic_and_abort(const char* title, const char* text) {
@@ -136,6 +150,38 @@ static double load_position(const char* filename) {
   }
   fclose(f);
   return 0.0;
+}
+
+/* --- Volume persistence --- */
+
+static void save_volume(void) {
+  char path[1024];
+  snprintf(path, sizeof(path), "%s/volume.txt", audio_dir);
+  FILE* f = fopen(path, "w");
+  if (f) {
+    fprintf(f, "%.2f\n", volume);
+    fclose(f);
+  }
+}
+
+static float load_volume(void) {
+  char path[1024];
+  snprintf(path, sizeof(path), "%s/volume.txt", audio_dir);
+  FILE* f = fopen(path, "r");
+  if (!f) return 0.5f;
+  float v = 0.5f;
+  if (fscanf(f, "%f", &v) != 1) v = 0.5f;
+  fclose(f);
+  if (v < 0.0f) v = 0.0f;
+  if (v > 1.0f) v = 1.0f;
+  return v;
+}
+
+static void adjust_volume(float delta) {
+  volume += delta;
+  if (volume < 0.0f) volume = 0.0f;
+  if (volume > 1.0f) volume = 1.0f;
+  save_volume();
 }
 
 /* --- File scanning --- */
@@ -443,6 +489,47 @@ static void switch_file(int index) {
   SDL_SetWindowTitle(window, "SDLamp2 - No playable files");
 }
 
+/* --- Navigation --- */
+
+static void activate_focused_button(void) {
+  switch (focus_index) {
+    case FOCUS_REWIND: {
+      double pos = get_current_seconds() - SEEK_SECONDS;
+      decoder_seek(pos < 0.0 ? 0.0 : pos);
+      break;
+    }
+    case FOCUS_STOP:
+      if (!paused) {
+        paused = SDL_TRUE;
+        SDL_PauseAudioDevice(audio_device, 1);
+        if (current_file[0]) {
+          save_position(current_file, get_current_seconds());
+        }
+      }
+      break;
+    case FOCUS_PLAY:
+      if (paused && num_audio_files > 0) {
+        paused = SDL_FALSE;
+        SDL_PauseAudioDevice(audio_device, 0);
+      }
+      break;
+    case FOCUS_FF: {
+      double pos = get_current_seconds() + SEEK_SECONDS;
+      double dur = get_duration_seconds();
+      decoder_seek((dur > 0.0 && pos > dur) ? dur : pos);
+      break;
+    }
+    case FOCUS_NEXT:
+      if (num_audio_files > 0) {
+        int next = (current_file_index + 1) % num_audio_files;
+        switch_file(next);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
 /* --- Main --- */
 
 int main(int argc, char** argv) {
@@ -451,12 +538,19 @@ int main(int argc, char** argv) {
     audio_dir[sizeof(audio_dir) - 1] = '\0';
   }
 
+  /* Volume slider (left of buttons) */
+  const SDL_Rect volume_bg = {25, 390, 30, 80};
+
   /* Button positions (bottom of window, centered) */
   const SDL_Rect rewind_btn = {80, 390, 80, 80};
   const SDL_Rect stop_btn = {180, 390, 80, 80};
   const SDL_Rect play_btn = {280, 390, 80, 80};
   const SDL_Rect ff_btn = {380, 390, 80, 80};
   const SDL_Rect next_btn = {480, 390, 80, 80};
+
+  /* Array of focusable rects indexed by FOCUS_* constants */
+  const SDL_Rect* focus_rects[FOCUS_COUNT] = {&volume_bg, &rewind_btn, &stop_btn,
+                                               &play_btn,  &ff_btn,     &next_btn};
 
   /* Sprite sheet source rects */
   const SDL_Rect rewind_sprite = {0, 0, 200, 200};
@@ -468,7 +562,7 @@ int main(int argc, char** argv) {
   /* Progress bar area */
   const SDL_Rect progress_bg = {20, 360, 600, 15};
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0) {
     panic_and_abort("SDL_Init failed!", SDL_GetError());
   }
 
@@ -496,6 +590,17 @@ int main(int argc, char** argv) {
     panic_and_abort("Could not open audio device!", SDL_GetError());
   }
 
+  /* Open first available game controller */
+  for (int i = 0; i < SDL_NumJoysticks(); i++) {
+    if (SDL_IsGameController(i)) {
+      controller = SDL_GameControllerOpen(i);
+      if (controller) {
+        printf("Controller: %s\n", SDL_GameControllerName(controller));
+        break;
+      }
+    }
+  }
+
   SDL_Surface* controls_surface = IMG_Load("controls.png");
   if (!controls_surface) {
     panic_and_abort("Could not load controls asset!", SDL_GetError());
@@ -509,6 +614,7 @@ int main(int argc, char** argv) {
 
   /* Scan directory and open first file */
   scan_audio_files(audio_dir);
+  volume = load_volume();
   if (num_audio_files > 0) {
     switch_file(0);
   } else {
@@ -526,37 +632,65 @@ int main(int argc, char** argv) {
           running = SDL_FALSE;
           break;
 
-        case SDL_MOUSEBUTTONDOWN: {
-          const SDL_Point pt = {e.button.x, e.button.y};
+        case SDL_KEYDOWN:
+          switch (e.key.keysym.sym) {
+            case SDLK_LEFT:
+              focus_index = (focus_index - 1 + FOCUS_COUNT) % FOCUS_COUNT;
+              break;
+            case SDLK_RIGHT:
+              focus_index = (focus_index + 1) % FOCUS_COUNT;
+              break;
+            case SDLK_UP:
+              if (focus_index == FOCUS_VOLUME) adjust_volume(0.05f);
+              break;
+            case SDLK_DOWN:
+              if (focus_index == FOCUS_VOLUME) adjust_volume(-0.05f);
+              break;
+            case SDLK_RETURN:
+            case SDLK_KP_ENTER:
+              activate_focused_button();
+              break;
+          }
+          break;
 
-          if (SDL_PointInRect(&pt, &rewind_btn)) {
-            double pos = get_current_seconds() - SEEK_SECONDS;
-            decoder_seek(pos < 0.0 ? 0.0 : pos);
-          } else if (SDL_PointInRect(&pt, &stop_btn)) {
-            if (!paused) {
-              paused = SDL_TRUE;
-              SDL_PauseAudioDevice(audio_device, 1);
-              if (current_file[0]) {
-                save_position(current_file, get_current_seconds());
-              }
-            }
-          } else if (SDL_PointInRect(&pt, &play_btn)) {
-            if (paused && num_audio_files > 0) {
-              paused = SDL_FALSE;
-              SDL_PauseAudioDevice(audio_device, 0);
-            }
-          } else if (SDL_PointInRect(&pt, &ff_btn)) {
-            double pos = get_current_seconds() + SEEK_SECONDS;
-            double dur = get_duration_seconds();
-            decoder_seek((dur > 0.0 && pos > dur) ? dur : pos);
-          } else if (SDL_PointInRect(&pt, &next_btn)) {
-            if (num_audio_files > 0) {
-              int next = (current_file_index + 1) % num_audio_files;
-              switch_file(next);
+        case SDL_CONTROLLERBUTTONDOWN:
+          switch (e.cbutton.button) {
+            case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+              focus_index = (focus_index - 1 + FOCUS_COUNT) % FOCUS_COUNT;
+              break;
+            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+              focus_index = (focus_index + 1) % FOCUS_COUNT;
+              break;
+            case SDL_CONTROLLER_BUTTON_DPAD_UP:
+              if (focus_index == FOCUS_VOLUME) adjust_volume(0.05f);
+              break;
+            case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+              if (focus_index == FOCUS_VOLUME) adjust_volume(-0.05f);
+              break;
+            case SDL_CONTROLLER_BUTTON_A:
+              activate_focused_button();
+              break;
+          }
+          break;
+
+        case SDL_CONTROLLERDEVICEADDED:
+          if (!controller && SDL_IsGameController(e.cdevice.which)) {
+            controller = SDL_GameControllerOpen(e.cdevice.which);
+            if (controller) {
+              printf("Controller added: %s\n", SDL_GameControllerName(controller));
             }
           }
           break;
-        }
+
+        case SDL_CONTROLLERDEVICEREMOVED:
+          if (controller && e.cdevice.which ==
+                                SDL_JoystickInstanceID(
+                                    SDL_GameControllerGetJoystick(controller))) {
+            SDL_GameControllerClose(controller);
+            controller = NULL;
+            printf("Controller removed\n");
+          }
+          break;
       }
     }
 
@@ -576,6 +710,11 @@ int main(int argc, char** argv) {
         static Uint8 transfer_buf[32768];
         int got = SDL_AudioStreamGet(stream, transfer_buf, to_get);
         if (got > 0) {
+          float* samples = (float*)transfer_buf;
+          int num_samples = got / (int)sizeof(float);
+          for (int i = 0; i < num_samples; i++) {
+            samples[i] *= volume;
+          }
           SDL_QueueAudio(audio_device, transfer_buf, got);
         }
       }
@@ -621,12 +760,37 @@ int main(int argc, char** argv) {
       SDL_RenderFillRect(renderer, &fill);
     }
 
+    /* Volume slider */
+    SDL_SetRenderDrawColor(renderer, 0xC0, 0xC0, 0xC0, 0xFF);
+    SDL_RenderFillRect(renderer, &volume_bg);
+    {
+      int fill_h = (int)(volume_bg.h * volume);
+      SDL_Rect vol_fill = {volume_bg.x, volume_bg.y + volume_bg.h - fill_h, volume_bg.w, fill_h};
+      SDL_SetRenderDrawColor(renderer, 0x50, 0x50, 0x50, 0xFF);
+      SDL_RenderFillRect(renderer, &vol_fill);
+    }
+
     /* Buttons */
     SDL_RenderCopy(renderer, controls_texture, &rewind_sprite, &rewind_btn);
     SDL_RenderCopy(renderer, controls_texture, &stop_sprite, &stop_btn);
     SDL_RenderCopy(renderer, controls_texture, &play_sprite, &play_btn);
     SDL_RenderCopy(renderer, controls_texture, &ff_sprite, &ff_btn);
     SDL_RenderCopy(renderer, controls_texture, &next_sprite, &next_btn);
+
+    /* Focus highlight — 3px blue border around focused element */
+    {
+      const SDL_Rect r = *focus_rects[focus_index];
+      const int t = 3;
+      SDL_SetRenderDrawColor(renderer, 0x00, 0x80, 0xFF, 0xFF);
+      SDL_Rect top = {r.x - t, r.y - t, r.w + 2 * t, t};
+      SDL_Rect bot = {r.x - t, r.y + r.h, r.w + 2 * t, t};
+      SDL_Rect lft = {r.x - t, r.y, t, r.h};
+      SDL_Rect rgt = {r.x + r.w, r.y, t, r.h};
+      SDL_RenderFillRect(renderer, &top);
+      SDL_RenderFillRect(renderer, &bot);
+      SDL_RenderFillRect(renderer, &lft);
+      SDL_RenderFillRect(renderer, &rgt);
+    }
 
     SDL_RenderPresent(renderer);
   }
@@ -635,9 +799,11 @@ int main(int argc, char** argv) {
   if (current_file[0] && decoder.format_ctx) {
     save_position(current_file, get_current_seconds());
   }
+  save_volume();
   decoder_close();
   SDL_FreeAudioStream(stream);
   SDL_DestroyTexture(controls_texture);
+  if (controller) SDL_GameControllerClose(controller);
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);

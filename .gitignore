@@ -3,5 +3,6 @@
 *.mp3
 *.m4a
 positions.txt
+volume.txt
 .claude/
 
