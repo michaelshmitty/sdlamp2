@@ -38,6 +38,13 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 5. Changelog
 
+### 2026-02-11 — Lossless M4A concatenation tool
+
+- **New tool**: `tools/concat_cassette.sh` — losslessly concatenates multiple m4a files into a single file using the ffmpeg concat demuxer (`-c copy`, no re-encoding). Designed to recombine individual story files back into per-cassette files.
+- **Chapter markers**: Generates ffmpeg metadata with one chapter per input file, titled from the input filename (sans extension). Chapters enable navigation within the combined file.
+- **Album art preserved**: Attached pictures from the first input file carry through automatically via stream copy.
+- **Fast-start output**: Uses `-movflags +faststart` to place the moov atom at the front for better seeking.
+
 ### 2026-02-10 — Volume control and d-pad/keyboard navigation
 
 - **Cursor-based navigation**: Replaced mouse input with a focus-highlight model. Arrow keys (Left/Right) and d-pad move a visible blue highlight between UI elements; Enter/A button activates the focused button. Designed for use on a handheld gaming device with no mouse.
