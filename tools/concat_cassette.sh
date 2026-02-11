@@ -74,9 +74,10 @@ for f in "${inputs[@]}"; do
   [ -z "$dur" ] && die "Could not read duration of: $f"
   dur_ms=$(awk "BEGIN { printf \"%d\", $dur * 1000 }")
 
-  # Chapter title from filename (strip path and extension)
+  # Chapter title from filename (strip path, extension, and leading track number)
   title=$(basename "$f")
   title="${title%.*}"
+  title=$(echo "$title" | sed 's/^[0-9][0-9]*[[:space:]._-]*//')
 
   end_ms=$((cumulative_ms + dur_ms))
   cat >> "$metadata" <<EOF
@@ -90,10 +91,21 @@ EOF
   cumulative_ms=$end_ms
 done
 
+# --- Extract album art from first input (if present) ---
+
+art="$tmpdir/cover.jpg"
+ffmpeg -v error -i "${inputs[0]}" -an -vcodec copy "$art" 2>/dev/null || true
+
 # --- Concatenate ---
 
-ffmpeg -y -f concat -safe 0 -i "$concat_list" -i "$metadata" \
-  -map_metadata 1 -c copy -movflags +faststart "$output" 2>&1
+if [ -f "$art" ]; then
+  ffmpeg -y -f concat -safe 0 -i "$concat_list" -i "$metadata" -i "$art" \
+    -map 0:a -map 2:v -map_metadata 1 -c copy \
+    -disposition:v:0 attached_pic -movflags +faststart "$output" 2>&1
+else
+  ffmpeg -y -f concat -safe 0 -i "$concat_list" -i "$metadata" \
+    -map 0:a -map_metadata 1 -c copy -movflags +faststart "$output" 2>&1
+fi
 
 # --- Summary ---
 
