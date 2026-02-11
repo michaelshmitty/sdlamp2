@@ -36,7 +36,18 @@ This document specifies the functional requirements for an SDL2 based media play
 - Keep it simple, apply Casey Muratori's `semantic compression` principles, don't refactor too soon or write code that's too clever for its own good
 - Keep a changelog in this functional specification document
 
-## 5. Changelog
+## 5. Target Platforms
+
+- **Deployment**: Linux ARM64 (aarch64) on a retro handheld gaming device
+- **Development/testing**: macOS Apple Silicon
+
+## 6. Changelog
+
+### 2026-02-11 — Debug flag for input diagnostics
+
+- **`--debug` flag**: New command-line option (`./sdlamp2 --debug [audio_dir]`) that enables verbose logging of all SDL input events to stdout. Designed to diagnose controller issues on retro handheld devices where non-standard controllers may not be recognized by SDL's GameController API.
+- **Startup enumeration**: When debug is on, logs the number of detected joysticks, each joystick's name, whether SDL recognizes it as a GameController, and its GUID.
+- **Event logging**: Logs `KEYDOWN/UP`, `CONTROLLERBUTTONDOWN/UP`, `JOYBUTTONDOWN/UP`, `JOYHATMOTION`, `JOYAXISMOTION` (with deadzone filter), and device add/remove events with identifying details.
 
 ### 2026-02-11 — Lossless M4A concatenation tool
 

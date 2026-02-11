@@ -65,6 +65,7 @@ static int current_file_index = 0;
 static float volume = 0.5f;
 static int focus_index = FOCUS_PLAY;
 static SDL_GameController* controller = NULL;
+static int debug_mode = 0;
 
 /* --- Utility --- */
 
@@ -533,8 +534,18 @@ static void activate_focused_button(void) {
 /* --- Main --- */
 
 int main(int argc, char** argv) {
-  if (argc > 1) {
-    strncpy(audio_dir, argv[1], sizeof(audio_dir) - 1);
+  /* Parse arguments: [--debug] [audio_directory] */
+  int argi = 1;
+  while (argi < argc && argv[argi][0] == '-') {
+    if (strcmp(argv[argi], "--debug") == 0) {
+      debug_mode = 1;
+    } else {
+      fprintf(stderr, "Unknown option: %s\n", argv[argi]);
+    }
+    argi++;
+  }
+  if (argi < argc) {
+    strncpy(audio_dir, argv[argi], sizeof(audio_dir) - 1);
     audio_dir[sizeof(audio_dir) - 1] = '\0';
   }
 
@@ -590,8 +601,21 @@ int main(int argc, char** argv) {
     panic_and_abort("Could not open audio device!", SDL_GetError());
   }
 
-  /* Open first available game controller */
-  for (int i = 0; i < SDL_NumJoysticks(); i++) {
+  /* Enumerate and open game controllers */
+  int num_joy = SDL_NumJoysticks();
+  if (debug_mode) {
+    printf("[debug] Joysticks detected: %d\n", num_joy);
+    for (int i = 0; i < num_joy; i++) {
+      SDL_JoystickGUID guid = SDL_JoystickGetDeviceGUID(i);
+      char guid_str[64];
+      SDL_JoystickGetGUIDString(guid, guid_str, sizeof(guid_str));
+      printf("[debug]   #%d: \"%s\" | GameController=%s | GUID=%s\n", i,
+             SDL_JoystickNameForIndex(i), SDL_IsGameController(i) ? "yes" : "no", guid_str);
+    }
+    fflush(stdout);
+  }
+
+  for (int i = 0; i < num_joy; i++) {
     if (SDL_IsGameController(i)) {
       controller = SDL_GameControllerOpen(i);
       if (controller) {
@@ -627,6 +651,64 @@ int main(int argc, char** argv) {
   while (running) {
     /* --- Event handling --- */
     while (SDL_PollEvent(&e)) {
+      /* Debug: log all input-related events */
+      if (debug_mode) {
+        switch (e.type) {
+          case SDL_KEYDOWN:
+            printf("[debug] KEYDOWN: sym=%s (0x%x) scancode=%d\n",
+                   SDL_GetKeyName(e.key.keysym.sym), e.key.keysym.sym, e.key.keysym.scancode);
+            break;
+          case SDL_KEYUP:
+            printf("[debug] KEYUP: sym=%s (0x%x) scancode=%d\n",
+                   SDL_GetKeyName(e.key.keysym.sym), e.key.keysym.sym, e.key.keysym.scancode);
+            break;
+          case SDL_CONTROLLERBUTTONDOWN:
+            printf("[debug] CONTROLLERBUTTONDOWN: button=%d (%s)\n", e.cbutton.button,
+                   SDL_GameControllerGetStringForButton(e.cbutton.button));
+            break;
+          case SDL_CONTROLLERBUTTONUP:
+            printf("[debug] CONTROLLERBUTTONUP: button=%d (%s)\n", e.cbutton.button,
+                   SDL_GameControllerGetStringForButton(e.cbutton.button));
+            break;
+          case SDL_JOYBUTTONDOWN:
+            printf("[debug] JOYBUTTONDOWN: joy=%d button=%d\n", e.jbutton.which,
+                   e.jbutton.button);
+            break;
+          case SDL_JOYBUTTONUP:
+            printf("[debug] JOYBUTTONUP: joy=%d button=%d\n", e.jbutton.which, e.jbutton.button);
+            break;
+          case SDL_JOYHATMOTION:
+            printf("[debug] JOYHATMOTION: joy=%d hat=%d value=%d\n", e.jhat.which, e.jhat.hat,
+                   e.jhat.value);
+            break;
+          case SDL_JOYAXISMOTION:
+            if (e.jaxis.value > 8000 || e.jaxis.value < -8000) {
+              printf("[debug] JOYAXISMOTION: joy=%d axis=%d value=%d\n", e.jaxis.which,
+                     e.jaxis.axis, e.jaxis.value);
+            }
+            break;
+          case SDL_CONTROLLERDEVICEADDED: {
+            SDL_JoystickGUID guid = SDL_JoystickGetDeviceGUID(e.cdevice.which);
+            char guid_str[64];
+            SDL_JoystickGetGUIDString(guid, guid_str, sizeof(guid_str));
+            printf("[debug] CONTROLLERDEVICEADDED: index=%d name=\"%s\" GUID=%s\n", e.cdevice.which,
+                   SDL_JoystickNameForIndex(e.cdevice.which), guid_str);
+            break;
+          }
+          case SDL_CONTROLLERDEVICEREMOVED:
+            printf("[debug] CONTROLLERDEVICEREMOVED: id=%d\n", e.cdevice.which);
+            break;
+          case SDL_JOYDEVICEADDED:
+            printf("[debug] JOYDEVICEADDED: index=%d name=\"%s\"\n", e.jdevice.which,
+                   SDL_JoystickNameForIndex(e.jdevice.which));
+            break;
+          case SDL_JOYDEVICEREMOVED:
+            printf("[debug] JOYDEVICEREMOVED: id=%d\n", e.jdevice.which);
+            break;
+        }
+        fflush(stdout);
+      }
+
       switch (e.type) {
         case SDL_QUIT:
           running = SDL_FALSE;
@@ -677,7 +759,12 @@ int main(int argc, char** argv) {
           if (!controller && SDL_IsGameController(e.cdevice.which)) {
             controller = SDL_GameControllerOpen(e.cdevice.which);
             if (controller) {
-              printf("Controller added: %s\n", SDL_GameControllerName(controller));
+              SDL_Joystick* joy = SDL_GameControllerGetJoystick(controller);
+              SDL_JoystickGUID guid = SDL_JoystickGetGUID(joy);
+              char guid_str[64];
+              SDL_JoystickGetGUIDString(guid, guid_str, sizeof(guid_str));
+              printf("Controller added: %s (GUID: %s)\n", SDL_GameControllerName(controller),
+                     guid_str);
             }
           }
           break;
