@@ -87,21 +87,22 @@ The `dmenu_ln` script already supports switching the startup binary via config f
 
 ### Setup
 
-1. **Copy the binary** to the device:
+1. **Copy the binary and wrapper** to the device:
 
    ```sh
    scp build/sdlamp2 root@<device>:/mnt/vendor/bin/sdlamp2
+   scp tools/rg35xx-wrapper.sh root@<device>:/mnt/vendor/bin/rg35xx-wrapper.sh
    ```
 
 2. **Add the config check** to `/mnt/vendor/ctrl/dmenu_ln`. In the section where `CMD` overrides are checked (after the existing `muos.ini` / `vpRun.ini` checks, before the `app_scheduling` call), add:
 
    ```bash
    if [ -f "/mnt/vendor/sdlamp2.ini" ];then
-       CMD="/mnt/vendor/bin/sdlamp2 /mnt/sdcard/Music"
+       CMD="/mnt/vendor/bin/rg35xx-wrapper.sh"
    fi
    ```
 
-   The unquoted `$CMD` in `app_scheduling` undergoes word splitting, so the path argument is passed correctly.
+   The wrapper script handles device-specific concerns (WiFi hotspot, power button monitoring) and launches sdlamp2 as its main foreground process. See `tools/rg35xx-wrapper.sh` for details.
 
 3. **Enable sdlamp2 on boot:**
 
@@ -121,7 +122,7 @@ Everything else in the boot chain continues to work:
 
 - **Charging mode** — handled in `loadapp.sh` before the restart loop
 - **LED/backlight control** — `brightCtrl.bin` started by `launcher.sh`
-- **Clean shutdown** — system shutdown scripts unaffected
+- **Clean shutdown** — sdlamp2 handles SIGTERM/SIGINT, saving position and volume before exit. The wrapper script can trigger `poweroff` after sdlamp2 exits
 - **Restart on exit** — if sdlamp2 exits cleanly (status 0), the restart loop in `loadapp.sh` re-launches it immediately
 - **Crash recovery** — if sdlamp2 crashes (non-zero exit), `app_scheduling` sleeps 30s then the loop retries
 - **Easy revert** — removing `sdlamp2.ini` restores the stock menu on next boot

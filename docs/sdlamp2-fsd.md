@@ -43,6 +43,10 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Clean shutdown on SIGTERM/SIGINT
+
+- **Signal handling**: sdlamp2 now catches SIGTERM and SIGINT via a `sig_atomic_t` flag checked in the main loop. On signal, the existing cleanup path runs (save position, save volume, close decoder, SDL_Quit) instead of being killed instantly. This ensures position is saved when the system shuts down or the process is terminated by a wrapper script.
+
 ### 2026-02-13 — Combine Play/Stop, add Previous Cassette button
 
 - **Play/Stop combined**: The separate Stop and Play buttons are merged into a single toggle button that shows the play icon (▶) when paused and the stop icon (■) when playing.

@@ -5,6 +5,7 @@
 #include <libswresample/swresample.h>
 
 #include <dirent.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,15 @@ typedef struct {
   int art_width;
   int art_height;
 } Decoder;
+
+/* --- Signal handling --- */
+
+static volatile sig_atomic_t got_signal = 0;
+
+static void signal_handler(int sig) {
+  (void)sig;
+  got_signal = 1;
+}
 
 /* --- Globals --- */
 
@@ -656,6 +666,10 @@ int main(int argc, char** argv) {
     panic_and_abort("Could not create controls texture!", SDL_GetError());
   }
 
+  /* Handle SIGTERM/SIGINT for clean shutdown (save position before exit) */
+  signal(SIGTERM, signal_handler);
+  signal(SIGINT, signal_handler);
+
   /* Scan directory and open first file */
   scan_audio_files(audio_dir);
   volume = load_volume();
@@ -669,6 +683,8 @@ int main(int argc, char** argv) {
   SDL_Event e;
 
   while (running) {
+    if (got_signal) running = SDL_FALSE;
+
     /* --- Event handling --- */
     while (SDL_PollEvent(&e)) {
       /* Debug: log all input-related events */
