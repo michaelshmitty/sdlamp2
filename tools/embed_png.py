@@ -2,7 +2,7 @@
 #
 # embed_png.py — Convert a PNG file into a C header with a byte array.
 #
-# Usage: ./tools/embed_png.py build/controls.png src/controls_png.h
+# Usage: ./tools/embed_png.py assets/controls.png src/controls_png.h
 #
 
 import sys

@@ -24,7 +24,7 @@ No test suite, no linter, no Makefile/CMake.
 
 ## Architecture
 
-Single-file C program: `src/sdlamp2.c` (~650 lines). One generated header: `src/controls_png.h` (embedded PNG byte array — regenerate with `./tools/embed_png.py build/controls.png src/controls_png.h` if the spritesheet changes).
+Single-file C program: `src/sdlamp2.c` (~650 lines). One generated header: `src/controls_png.h` (embedded PNG byte array — regenerate with `./tools/embed_png.py assets/controls.png src/controls_png.h` if the spritesheet changes).
 
 Key sections in order:
 - **Decoder struct** — holds all FFmpeg state (format/codec contexts, swr resampler, album art texture)
