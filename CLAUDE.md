@@ -15,16 +15,16 @@ See `docs/sdlamp2-fsd.md` for the full functional specification and changelog.
 ```sh
 ./build.sh              # macOS — builds to build/sdlamp2
 ./build_aarch64.sh      # Linux aarch64 variant
-cd build && ./sdlamp2 [audio_directory]
+./build/sdlamp2 [audio_directory]
 ```
 
-The binary must be run from `build/` because it loads `controls.png` from the current working directory. Audio directory defaults to cwd if not specified.
+The controls spritesheet (`controls.png`) is embedded in the binary. If an external `controls.png` exists in the current working directory it takes precedence, allowing custom skins. Audio directory defaults to cwd if not specified.
 
 No test suite, no linter, no Makefile/CMake.
 
 ## Architecture
 
-Single-file C program: `src/sdlamp2.c` (~650 lines). No headers, no separate compilation units.
+Single-file C program: `src/sdlamp2.c` (~650 lines). One generated header: `src/controls_png.h` (embedded PNG byte array — regenerate with `./tools/embed_png.py build/controls.png src/controls_png.h` if the spritesheet changes).
 
 Key sections in order:
 - **Decoder struct** — holds all FFmpeg state (format/codec contexts, swr resampler, album art texture)

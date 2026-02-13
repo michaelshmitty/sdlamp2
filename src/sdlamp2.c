@@ -13,6 +13,8 @@
 #include "SDL.h"
 #include "SDL_image.h"
 
+#include "controls_png.h"
+
 #define MAX_FILES 64
 #define SEEK_SECONDS 10.0
 
@@ -626,6 +628,12 @@ int main(int argc, char** argv) {
   }
 
   SDL_Surface* controls_surface = IMG_Load("controls.png");
+  if (!controls_surface) {
+    SDL_RWops* rw = SDL_RWFromConstMem(controls_png_data, controls_png_size);
+    if (rw) {
+      controls_surface = IMG_Load_RW(rw, 1);
+    }
+  }
   if (!controls_surface) {
     panic_and_abort("Could not load controls asset!", SDL_GetError());
   }

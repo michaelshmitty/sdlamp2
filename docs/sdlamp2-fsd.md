@@ -43,6 +43,11 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Embed controls spritesheet into binary
+
+- **Embedded asset**: `controls.png` is now compiled into the binary as a C byte array (`src/controls_png.h`), eliminating the requirement to run from the `build/` directory.
+- **External override**: If a `controls.png` file exists in the current working directory, it is loaded in preference to the embedded data, preserving the ability to use custom skins.
+
 ### 2026-02-11 — Debug flag for input diagnostics
 
 - **`--debug` flag**: New command-line option (`./sdlamp2 --debug [audio_dir]`) that enables verbose logging of all SDL input events to stdout. Designed to diagnose controller issues on retro handheld devices where non-standard controllers may not be recognized by SDL's GameController API.
