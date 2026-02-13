@@ -2,6 +2,43 @@
 
 This document describes the current Docker/Buildroot cross-compilation toolchain, the architecture mismatch with the target device, and possible approaches to fix it.
 
+## Target Device
+
+### Hardware
+
+- **Device:** Anbernic RG35XX Plus
+- **SoC:** Allwinner H700 — quad-core ARM Cortex-A53 @ 1.5 GHz (AArch64 / ARMv8-A)
+- **GPU:** Mali G31 MP2
+- **RAM:** 1 GB LPDDR4
+- **Display:** 640×480 IPS
+
+### Software
+
+- **OS:** Ubuntu 22.04 LTS (Jammy Jellyfish) — [modified stock firmware](https://github.com/cbepx-me/Anbernic-H700-RG-xx-StockOS-Modification)
+- **Kernel:** Linux 4.9.170 aarch64 (proprietary, no source released by Anbernic)
+- **Architecture:** aarch64 / arm64 (confirmed via `dpkg --print-architecture`)
+- **glibc:** 2.35
+
+### Libraries on Device
+
+All required shared libraries are pre-installed. Most are at `/usr/lib/`, some at `/usr/lib/aarch64-linux-gnu/` (Debian multiarch path):
+
+| Library | Soname | Notes |
+|---------|--------|-------|
+| SDL2 | `libSDL2-2.0.so.0.12.0` | SDL 2.0.12 |
+| SDL2_image | `libSDL2_image-2.0.so.0.900.0` | SDL2_image 2.0.9, at multiarch path |
+| libavcodec | `libavcodec.so.58` | FFmpeg ~4.x |
+| libavformat | `libavformat.so.58` | FFmpeg ~4.x |
+| libavutil | `libavutil.so.56` | FFmpeg ~4.x |
+| libswresample | `libswresample.so.3` | FFmpeg ~4.x |
+
+### Implications for Cross-Compilation
+
+- The device userland is Debian/Ubuntu-based (has `dpkg`, `apt-get`, `systemd`)
+- Shared libraries are already present — no need to bundle or build them via Buildroot
+- A native aarch64 compile (e.g. inside an arm64 Docker container) produces working binaries
+- Must link against glibc ≤ 2.35 (use GCC ≤ 12 to avoid GLIBCXX version mismatches)
+
 ## Current Toolchain Architecture
 
 ### Pipeline Overview
@@ -113,7 +150,9 @@ Three packages fail to build against glibc 2.28 because `_IO_ftrylockfile` was r
 
 ## Possible Approaches
 
-### A: Replace Buildroot with Debian Multiarch (Recommended)
+> **Update (2026-02):** Now that we've inspected the device (see [Target Device](#target-device)), approach A is confirmed to work — a native arm64 Docker container build produces binaries that run on the device with no issues. The Buildroot toolchain is unnecessary since all required shared libraries are already present on the device. Approaches B and C are kept below for historical reference.
+
+### A: Native arm64 Docker Container Build (Confirmed Working)
 
 Use `apt` with `dpkg --add-architecture arm64` inside a Debian Docker container to install aarch64 cross-compiler and libraries directly from Debian repos.
 
