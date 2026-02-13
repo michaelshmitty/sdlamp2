@@ -104,6 +104,22 @@ The `app_scheduling` function in `dmenu_ln` runs the selected binary. If it exit
 
 No standard framebuffer image tools (`fbv`, `fbi`, `psplash`) are installed. To display a PNG on the framebuffer, decode with Python3+PIL and write raw BGRA pixels to `/dev/fb0`.
 
+## Backlight Control
+
+There is no sysfs backlight interface (`/sys/class/backlight/` is empty) and the stock `brightCtrl.bin` daemon does not expose a usable control mechanism. The backlight is controlled via the Allwinner `/dev/disp` ioctl interface:
+
+| Ioctl               | Number   | Description                          |
+| :------------------ | :------- | :----------------------------------- |
+| `DISP_SET_BRIGHTNESS` | `0x102` | Set backlight brightness (0–255)     |
+| `DISP_GET_BRIGHTNESS` | `0x103` | Get current backlight brightness     |
+
+Both ioctls take an argument buffer of 4 unsigned longs (`struct { unsigned long args[4]; }`):
+- `args[0]` = screen index (always 0)
+- `args[1]` = brightness value (for SET; ignored for GET)
+- Return value (for GET) is in `args[0]` after the ioctl call
+
+Setting brightness to 0 turns the screen off completely. The original value (typically ~50) can be restored to turn it back on. This is used by `rg35xx-screen-monitor.py` for idle timeout and power button toggle.
+
 ## Stock Firmware Assets
 
 Shutdown-related assets in `/mnt/vendor/res1/shutdown/`:
@@ -123,11 +139,12 @@ The `dmenu_ln` script already supports switching the startup binary via config f
 
 ### Setup
 
-1. **Copy the binary and wrapper** to the device:
+1. **Copy the binary, wrapper, and screen monitor** to the device:
 
    ```sh
    scp build/sdlamp2 root@rg35xx:/mnt/vendor/bin/sdlamp2
    scp tools/rg35xx-wrapper.sh root@rg35xx:/mnt/vendor/bin/rg35xx-wrapper.sh
+   scp tools/rg35xx-screen-monitor.py root@rg35xx:/mnt/vendor/bin/rg35xx-screen-monitor.py
    ```
 
 2. **Add the config check** to `/mnt/vendor/ctrl/dmenu_ln`. In the section where `CMD` overrides are checked (after the existing `muos.ini` / `vpRun.ini` checks, before the `app_scheduling` call), add:

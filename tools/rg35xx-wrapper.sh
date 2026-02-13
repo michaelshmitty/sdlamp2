@@ -6,13 +6,15 @@
 # concerns that don't belong in the player binary:
 #   1. Monitor power button and trigger clean shutdown
 #   2. Display the stock firmware's shutdown screen (goodbye.png → /dev/fb0)
-#   3. Launch sdlamp2 as the main process
+#   3. Screen idle timeout (off after 15s) and power button screen toggle
+#   4. Launch sdlamp2 as the main process
 #
 # Install: copy to /mnt/vendor/bin/rg35xx-wrapper.sh
 # Config:  set CMD in dmenu_ln to point here instead of sdlamp2 directly
 
 SDLAMP2="/mnt/vendor/bin/sdlamp2"
 AUDIO_DIR="/mnt/sdcard/Music"
+SCREEN_MONITOR="/mnt/vendor/bin/rg35xx-screen-monitor.py"
 
 # --- WiFi hotspot ---
 # Deprioritized: connecting the device as a WiFi client to a shared network
@@ -45,6 +47,10 @@ monitor_power_button() {
   done
 }
 
+# --- Screen idle timeout + power button screen toggle ---
+python3 "$SCREEN_MONITOR" &
+SCREEN_MONITOR_PID=$!
+
 # --- Launch sdlamp2 ---
 # Run in background so we can capture PID for the power button monitor.
 "$SDLAMP2" "$AUDIO_DIR" &
@@ -58,7 +64,9 @@ wait "$SDLAMP2_PID"
 SDLAMP2_EXIT=$?
 
 # --- Cleanup ---
-# Kill the power button monitor if it's still running
+# Kill the screen monitor (SIGTERM restores brightness) and power button monitor.
+kill "$SCREEN_MONITOR_PID" 2>/dev/null
+wait "$SCREEN_MONITOR_PID" 2>/dev/null
 kill "$MONITOR_PID" 2>/dev/null
 
 # If this was a shutdown, call poweroff and block so the loadapp.sh restart

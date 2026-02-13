@@ -43,6 +43,13 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Screen idle timeout and power button toggle
+
+- **Screen idle timeout**: New Python screen monitor (`rg35xx-screen-monitor.py`) turns off the display after 15 seconds of no input on any device. Audio continues playing. Any button press wakes the screen.
+- **Power button screen toggle**: A short press (<2s) of the power button toggles the screen on/off. Long press (3s+) still triggers shutdown via the existing wrapper logic.
+- **Allwinner /dev/disp backlight**: Uses `SET_BRIGHTNESS` / `GET_BRIGHTNESS` ioctls on `/dev/disp` since the device has no sysfs backlight interface. Brightness is restored on SIGTERM so the shutdown screen remains visible.
+- **Wrapper integration**: `rg35xx-wrapper.sh` launches the screen monitor alongside sdlamp2 and kills it during cleanup.
+
 ### 2026-02-13 — Hold-to-shutdown with stock shutdown screen
 
 - **Hold-to-shutdown**: The power button monitor in `rg35xx-wrapper.sh` requires a 3-second hold before triggering shutdown. A quick tap does nothing — a background timer subshell starts on press and is cancelled on release. If held past 3 seconds, sends SIGTERM to sdlamp2 then triggers shutdown.
