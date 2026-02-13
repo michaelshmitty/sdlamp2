@@ -43,6 +43,11 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Remember last cassette and pause on switch
+
+- **Remember last cassette**: The current cassette filename is saved to `last_cassette.txt` in the audio directory on every file switch. On startup, the player resumes the last-loaded cassette instead of always starting with the first file. Falls back to the first file if the saved file is missing or not found.
+- **Pause on cassette switch**: Switching cassettes (prev/next) now always lands in a paused state, even if the player was playing. This avoids the jarring effect of immediately resuming from a saved position in a different cassette.
+
 ### 2026-02-13 — Fix power button shutdown regression
 
 - **Consolidated input handling**: Power button long-press shutdown is now handled by `rg35xx-screen-monitor.py` instead of a separate `evtest`-based monitor in the wrapper. Both monitors were reading `/dev/input/event0` simultaneously, causing the `evtest` parser to miss power button events on the device's Linux 4.9 kernel.

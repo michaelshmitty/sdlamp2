@@ -197,6 +197,37 @@ static void adjust_volume(float delta) {
   save_volume();
 }
 
+/* --- Last cassette persistence --- */
+
+static void save_last_cassette(const char* filename) {
+  char path[1024];
+  snprintf(path, sizeof(path), "%s/last_cassette.txt", audio_dir);
+  FILE* f = fopen(path, "w");
+  if (f) {
+    fprintf(f, "%s\n", filename);
+    fclose(f);
+  }
+}
+
+static int load_last_cassette(void) {
+  char path[1024];
+  snprintf(path, sizeof(path), "%s/last_cassette.txt", audio_dir);
+  FILE* f = fopen(path, "r");
+  if (!f) return 0;
+  char name[256];
+  if (!fgets(name, sizeof(name), f)) {
+    fclose(f);
+    return 0;
+  }
+  fclose(f);
+  char* nl = strchr(name, '\n');
+  if (nl) *nl = '\0';
+  for (int i = 0; i < num_audio_files; i++) {
+    if (strcmp(audio_files[i], name) == 0) return i;
+  }
+  return 0;
+}
+
 /* --- File scanning --- */
 
 static int has_audio_extension(const char* name) {
@@ -484,11 +515,14 @@ static void switch_file(int index) {
         decoder_seek(pos);
       }
 
+      save_last_cassette(current_file);
+
       char title[768];
       snprintf(title, sizeof(title), "SDLamp2 - %s", current_file);
       SDL_SetWindowTitle(window, title);
 
-      SDL_PauseAudioDevice(audio_device, paused);
+      paused = SDL_TRUE;
+      SDL_PauseAudioDevice(audio_device, 1);
       return;
     }
 
@@ -674,7 +708,7 @@ int main(int argc, char** argv) {
   scan_audio_files(audio_dir);
   volume = load_volume();
   if (num_audio_files > 0) {
-    switch_file(0);
+    switch_file(load_last_cassette());
   } else {
     SDL_SetWindowTitle(window, "SDLamp2 - No audio files found");
   }
