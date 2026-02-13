@@ -5,6 +5,5 @@ positions.txt
 volume.txt
 .claude/
 audio/
-docker/.build
 docker-arm64/.build
 
