@@ -67,6 +67,7 @@ static int current_file_index = 0;
 static float volume = 0.5f;
 static int focus_index = FOCUS_PLAY;
 static SDL_GameController* controller = NULL;
+static SDL_Joystick* joystick = NULL;
 static int debug_mode = 0;
 
 /* --- Utility --- */
@@ -627,6 +628,16 @@ int main(int argc, char** argv) {
     }
   }
 
+  if (!controller) {
+    for (int i = 0; i < num_joy; i++) {
+      joystick = SDL_JoystickOpen(i);
+      if (joystick) {
+        printf("Joystick: %s\n", SDL_JoystickName(joystick));
+        break;
+      }
+    }
+  }
+
   SDL_Surface* controls_surface = IMG_Load("controls.png");
   if (!controls_surface) {
     SDL_RWops* rw = SDL_RWFromConstMem(controls_png_data, controls_png_size);
@@ -763,6 +774,26 @@ int main(int argc, char** argv) {
           }
           break;
 
+        case SDL_JOYHATMOTION: {
+          Uint8 hat = e.jhat.value;
+          if (hat & SDL_HAT_LEFT) {
+            focus_index = (focus_index - 1 + FOCUS_COUNT) % FOCUS_COUNT;
+          } else if (hat & SDL_HAT_RIGHT) {
+            focus_index = (focus_index + 1) % FOCUS_COUNT;
+          } else if (hat & SDL_HAT_UP) {
+            if (focus_index == FOCUS_VOLUME) adjust_volume(0.05f);
+          } else if (hat & SDL_HAT_DOWN) {
+            if (focus_index == FOCUS_VOLUME) adjust_volume(-0.05f);
+          }
+          break;
+        }
+
+        case SDL_JOYBUTTONDOWN:
+          if (e.jbutton.button == 0) {
+            activate_focused_button();
+          }
+          break;
+
         case SDL_CONTROLLERDEVICEADDED:
           if (!controller && SDL_IsGameController(e.cdevice.which)) {
             controller = SDL_GameControllerOpen(e.cdevice.which);
@@ -784,6 +815,13 @@ int main(int argc, char** argv) {
             SDL_GameControllerClose(controller);
             controller = NULL;
             printf("Controller removed\n");
+          }
+          break;
+
+        case SDL_JOYDEVICEREMOVED:
+          if (joystick && e.jdevice.which == SDL_JoystickInstanceID(joystick)) {
+            SDL_JoystickClose(joystick);
+            joystick = NULL;
           }
           break;
       }
@@ -898,6 +936,7 @@ int main(int argc, char** argv) {
   decoder_close();
   SDL_FreeAudioStream(stream);
   SDL_DestroyTexture(controls_texture);
+  if (joystick) SDL_JoystickClose(joystick);
   if (controller) SDL_GameControllerClose(controller);
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyRenderer(renderer);

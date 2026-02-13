@@ -43,6 +43,12 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Raw joystick fallback for non-standard controllers
+
+- **Joystick fallback**: When no SDL GameController mapping exists for a connected device, the joystick is now opened directly via `SDL_JoystickOpen()` as a fallback. This fixes d-pad and face button input on devices like the Anbernic retro handheld whose GUID is not in SDL's GameController database.
+- **Hat/button handling**: `SDL_JOYHATMOTION` events drive d-pad navigation (left/right to move focus, up/down for volume), and `SDL_JOYBUTTONDOWN` button 0 (BTN_SOUTH / A) activates the focused button.
+- **Hot-unplug**: Raw joystick is properly closed on `SDL_JOYDEVICEREMOVED`.
+
 ### 2026-02-13 — Embed controls spritesheet into binary
 
 - **Embedded asset**: `controls.png` is now compiled into the binary as a C byte array (`src/controls_png.h`), eliminating the requirement to run from the `build/` directory.
