@@ -4,10 +4,9 @@
 #
 # Launched by dmenu_ln instead of sdlamp2 directly. Handles device-specific
 # concerns that don't belong in the player binary:
-#   1. Monitor power button and trigger clean shutdown
+#   1. Screen idle timeout, power button screen toggle, and long-press shutdown
 #   2. Display the stock firmware's shutdown screen (goodbye.png → /dev/fb0)
-#   3. Screen idle timeout (off after 15s) and power button screen toggle
-#   4. Launch sdlamp2 as the main process
+#   3. Launch sdlamp2 as the main process
 #
 # Install: copy to /mnt/vendor/bin/rg35xx-wrapper.sh
 # Config:  set CMD in dmenu_ln to point here instead of sdlamp2 directly
@@ -21,53 +20,24 @@ SCREEN_MONITOR="/mnt/vendor/bin/rg35xx-screen-monitor.py"
 # works fine even when sdlamp2 replaces the stock menu. Hotspot/AP mode isn't
 # needed — SSH access works over the shared network.
 
-# --- Power button monitor ---
-# axp2202-pek on /dev/input/event0 sends KEY_POWER (code 116).
-# logind has HandlePowerKey=ignore, so we handle it here.
-POWER_EVENT_DEV="/dev/input/event0"
-
-monitor_power_button() {
-  POWER_TIMER_PID=""
-  evtest "$POWER_EVENT_DEV" 2>/dev/null | while read -r line; do
-    case "$line" in
-      *"code 116"*"value 1"*)
-        # Power button pressed — start 3-second hold timer
-        ( trap 'exit 0' TERM; sleep 3; touch /tmp/.sdlamp2_shutdown; kill -TERM "$SDLAMP2_PID" 2>/dev/null ) &
-        POWER_TIMER_PID=$!
-        ;;
-      *"code 116"*"value 0"*)
-        # Power button released — cancel timer if still running
-        if [ -n "$POWER_TIMER_PID" ]; then
-          kill "$POWER_TIMER_PID" 2>/dev/null
-          wait "$POWER_TIMER_PID" 2>/dev/null
-          POWER_TIMER_PID=""
-        fi
-        ;;
-    esac
-  done
-}
-
-# --- Screen idle timeout + power button screen toggle ---
-python3 "$SCREEN_MONITOR" &
-SCREEN_MONITOR_PID=$!
-
 # --- Launch sdlamp2 ---
-# Run in background so we can capture PID for the power button monitor.
 "$SDLAMP2" "$AUDIO_DIR" &
 SDLAMP2_PID=$!
 
-monitor_power_button &
-MONITOR_PID=$!
+# --- Screen monitor (idle timeout + power button toggle + long-press shutdown) ---
+# Must launch after sdlamp2 so PID is available. Reads /dev/input/event0
+# directly for power button events — no evtest dependency.
+python3 "$SCREEN_MONITOR" "$SDLAMP2_PID" &
+SCREEN_MONITOR_PID=$!
 
 # Wait for sdlamp2 to finish (signal or normal exit).
 wait "$SDLAMP2_PID"
 SDLAMP2_EXIT=$?
 
 # --- Cleanup ---
-# Kill the screen monitor (SIGTERM restores brightness) and power button monitor.
+# Kill the screen monitor (SIGTERM restores brightness).
 kill "$SCREEN_MONITOR_PID" 2>/dev/null
 wait "$SCREEN_MONITOR_PID" 2>/dev/null
-kill "$MONITOR_PID" 2>/dev/null
 
 # If this was a shutdown, call poweroff and block so the loadapp.sh restart
 # loop doesn't relaunch dmenu_ln (which would take over the framebuffer and

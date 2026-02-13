@@ -43,6 +43,12 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Fix power button shutdown regression
+
+- **Consolidated input handling**: Power button long-press shutdown is now handled by `rg35xx-screen-monitor.py` instead of a separate `evtest`-based monitor in the wrapper. Both monitors were reading `/dev/input/event0` simultaneously, causing the `evtest` parser to miss power button events on the device's Linux 4.9 kernel.
+- **Timer-based long press**: The screen monitor uses a dynamic `select()` timeout to detect the 3-second hold threshold while the button is still held, rather than waiting for release. On long press, it touches `/tmp/.sdlamp2_shutdown` and sends SIGTERM to sdlamp2.
+- **Removed evtest dependency**: The `monitor_power_button()` function and `evtest` pipe are removed from `rg35xx-wrapper.sh`. The screen monitor accepts the sdlamp2 PID as a command-line argument and launches after sdlamp2.
+
 ### 2026-02-13 — Screen idle timeout and power button toggle
 
 - **Screen idle timeout**: New Python screen monitor (`rg35xx-screen-monitor.py`) turns off the display after 15 seconds of no input on any device. Audio continues playing. Any button press wakes the screen.
