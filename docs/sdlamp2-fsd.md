@@ -43,6 +43,12 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Screen wake fixes and idle auto-shutdown
+
+- **D-pad wakes screen**: The screen monitor now wakes on any input event type (EV_ABS, EV_KEY, etc.), not just EV_KEY. This fixes d-pad presses (which generate EV_ABS hat events) not waking the screen.
+- **Wake button doesn't act in app**: Uses EVIOCGRAB to take exclusive access to input devices while the screen is off. SDL in sdlamp2 receives no events while grabbed, so the button press that wakes the screen doesn't also trigger play/stop or switch cassettes. Grabs are released when the screen turns back on.
+- **Idle auto-shutdown**: After 10 minutes of no input AND no audio playback, the device auto-shuts down to save battery. Playback detection works by monitoring the audio file's read position via `/proc/<pid>/fdinfo/` — if the file offset is advancing, audio is being decoded. The timer resets on any input event or any detected playback activity.
+
 ### 2026-02-13 — Remember last cassette and pause on switch
 
 - **Remember last cassette**: The current cassette filename is saved to `last_cassette.txt` in the audio directory on every file switch. On startup, the player resumes the last-loaded cassette instead of always starting with the first file. Falls back to the first file if the saved file is missing or not found.
