@@ -475,7 +475,7 @@ static void switch_file(int index) {
         decoder_seek(pos);
       }
 
-      char title[256];
+      char title[768];
       snprintf(title, sizeof(title), "SDLamp2 - %s", current_file);
       SDL_SetWindowTitle(window, title);
 
