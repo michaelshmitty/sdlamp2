@@ -18,7 +18,7 @@ shell:
 endif
 
 build: .build
-	docker run --platform linux/arm64 --rm -v "$(PROJECT_DIR)":/workspace $(IMAGE_NAME) make
+	docker run --platform linux/arm64 --rm -v "$(PROJECT_DIR)":/workspace $(IMAGE_NAME) make clean all
 
 clean:
 	docker rmi $(IMAGE_NAME)
