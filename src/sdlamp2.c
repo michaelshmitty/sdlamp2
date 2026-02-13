@@ -478,8 +478,7 @@ static void switch_file(int index) {
       snprintf(title, sizeof(title), "SDLamp2 - %s", current_file);
       SDL_SetWindowTitle(window, title);
 
-      paused = SDL_FALSE;
-      SDL_PauseAudioDevice(audio_device, 0);
+      SDL_PauseAudioDevice(audio_device, paused);
       return;
     }
 
@@ -630,7 +629,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < num_joy; i++) {
       joystick = SDL_JoystickOpen(i);
       if (joystick) {
-        printf("Joystick: %s\n", SDL_JoystickName(joystick));
+        if (debug_mode) printf("Joystick: %s\n", SDL_JoystickName(joystick));
         break;
       }
     }

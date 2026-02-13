@@ -7,7 +7,7 @@
 | Version | 1.0        |
 | Status  | Draft      |
 | Created | 2026-02-10 |
-| Updated | 2026-02-10 |
+| Updated | 2026-02-13 |
 
 ## 1. Purpose
 
@@ -42,6 +42,12 @@ This document specifies the functional requirements for an SDL2 based media play
 - **Development/testing**: macOS Apple Silicon
 
 ## 6. Changelog
+
+### 2026-02-13 — Start paused, fix next-tape autoplay, quiet joystick log
+
+- **Start paused**: The player no longer autoplays on startup; it opens the last file at the saved position but waits for the user to press Play.
+- **Next tape respects pause state**: `switch_file()` no longer forces playback. Pressing "next tape" while paused switches the file and stays paused; pressing it while playing switches and continues playing.
+- **Joystick log behind --debug**: The "Joystick: ..." message is now only printed when `--debug` is passed.
 
 ### 2026-02-13 — arm64 Docker build container
 
