@@ -43,6 +43,10 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — arm64 Docker build container
+
+- **New build container**: Replaced the broken Buildroot cross-compilation toolchain (`docker/`) with an arm64 Ubuntu 22.04 Docker container (`docker-arm64/`). Runs via QEMU user-mode emulation on x86 hosts and matches the target device exactly (same distro, same glibc, same library versions). The project's native `make` works as-is inside the container — no cross-compilation flags needed.
+
 ### 2026-02-13 — Replace build scripts with Makefile
 
 - **Makefile**: Replaced `build.sh` (macOS) and `build_aarch64.sh` (Linux ARM) with a single `Makefile`. Native builds use `pkg-config` to resolve SDL2 and FFmpeg flags; cross-compilation uses `CROSS_COMPILE` and `PREFIX` environment variables set by the Docker/Buildroot toolchain.

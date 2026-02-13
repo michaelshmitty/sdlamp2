@@ -7,11 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 SDLamp2 is a simple SDL2-based audio player written in C, designed for a child to use. It plays long m4a/mp3 files (fairy tale cassette rips) with a cassette-player-like UI: rewind, stop, play, fast-forward, next tape. Inspired by Winamp.
 
 See `docs/sdlamp2-fsd.md` for the full functional specification and changelog.
-See `docs/TOOLCHAIN.md` for cross-compilation toolchain details and the aarch64 migration plan.
+See `docs/TOOLCHAIN.md` for target device details and the arm64 Docker build container.
 
 ## Build and Run
 
-**Dependencies:** SDL2, SDL2_image, FFmpeg libraries (libavformat, libavcodec, libavutil, libswresample). Installed via system package manager (native) or into the Buildroot sysroot (cross-compile).
+**Dependencies:** SDL2, SDL2_image, FFmpeg libraries (libavformat, libavcodec, libavutil, libswresample). Installed via system package manager (native) or via apt inside the arm64 Docker container.
 
 ```sh
 make                    # native build — uses pkg-config
@@ -19,10 +19,12 @@ make clean              # remove build artifacts
 ./build/sdlamp2 [audio_directory]
 ```
 
-Cross-compilation inside the Docker toolchain container (where `CROSS_COMPILE` and `PREFIX` are set by the environment):
+Building for the arm64 target device via the Docker container (from the `docker-arm64/` directory):
 
 ```sh
-make                    # picks up CROSS_COMPILE and PREFIX automatically
+make build              # one-shot: build sdlamp2 inside arm64 container
+make shell              # interactive shell inside the arm64 container
+make clean              # remove the Docker image
 ```
 
 The controls spritesheet (`controls.png`) is embedded in the binary. If an external `controls.png` exists in the current working directory it takes precedence, allowing custom skins. Audio directory defaults to cwd if not specified.
