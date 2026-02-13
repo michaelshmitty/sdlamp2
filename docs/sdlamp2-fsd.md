@@ -43,9 +43,11 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
-### 2026-02-13 — Power button monitor in device wrapper
+### 2026-02-13 — Hold-to-shutdown with stock shutdown screen
 
-- **Power button handling**: The `rg35xx-wrapper.sh` script now monitors `/dev/input/event0` (`axp2202-pek`) for `KEY_POWER` press events via `evtest`. On power button press, sends SIGTERM to sdlamp2 (which saves position and volume), waits 1 second, then calls `poweroff` for a clean shutdown.
+- **Hold-to-shutdown**: The power button monitor in `rg35xx-wrapper.sh` requires a 3-second hold before triggering shutdown. A quick tap does nothing — a background timer subshell starts on press and is cancelled on release. If held past 3 seconds, sends SIGTERM to sdlamp2 then triggers shutdown.
+- **Stock shutdown screen**: The wrapper displays the stock firmware's `goodbye.png` (`/mnt/vendor/res1/shutdown/goodbye.png`) by decoding it with Python3+PIL and writing raw BGRA pixels to `/dev/fb0`. This reuses the same shutdown image that `dmenu.bin` shows, keeping the experience consistent. The shutdown display is handled entirely in the wrapper — sdlamp2 just exits cleanly on SIGTERM.
+- **Restart loop blocked**: The wrapper uses a `/tmp/.sdlamp2_shutdown` flag file to distinguish shutdown from normal exit. On shutdown, the wrapper calls `poweroff` and blocks (sleep 30), preventing `loadapp.sh`'s restart loop from relaunching `dmenu_ln` and overwriting the shutdown screen.
 
 ### 2026-02-13 — Clean shutdown on SIGTERM/SIGINT
 

@@ -22,14 +22,14 @@ Device-specific reference for the target hardware. For build instructions see [`
 
 All required shared libraries are pre-installed. Most are at `/usr/lib/`, some at `/usr/lib/aarch64-linux-gnu/` (Debian multiarch path):
 
-| Library | Soname | Notes |
-|---------|--------|-------|
-| SDL2 | `libSDL2-2.0.so.0.12.0` | SDL 2.0.12 |
-| SDL2_image | `libSDL2_image-2.0.so.0.900.0` | SDL2_image 2.0.9, at multiarch path |
-| libavcodec | `libavcodec.so.58` | FFmpeg ~4.x |
-| libavformat | `libavformat.so.58` | FFmpeg ~4.x |
-| libavutil | `libavutil.so.56` | FFmpeg ~4.x |
-| libswresample | `libswresample.so.3` | FFmpeg ~4.x |
+| Library       | Soname                         | Notes                               |
+| :------------ | :----------------------------- | :---------------------------------- |
+| SDL2          | `libSDL2-2.0.so.0.12.0`        | SDL 2.0.12                          |
+| SDL2_image    | `libSDL2_image-2.0.so.0.900.0` | SDL2_image 2.0.9, at multiarch path |
+| libavcodec    | `libavcodec.so.58`             | FFmpeg ~4.x                         |
+| libavformat   | `libavformat.so.58`            | FFmpeg ~4.x                         |
+| libavutil     | `libavutil.so.56`              | FFmpeg ~4.x                         |
+| libswresample | `libswresample.so.3`           | FFmpeg ~4.x                         |
 
 Shared libraries are already present — no need to bundle or build them. A native aarch64 compile (e.g. inside the arm64 Docker container) produces working binaries. Must link against glibc ≤ 2.35.
 
@@ -37,24 +37,24 @@ Shared libraries are already present — no need to bundle or build them. A nati
 
 Three input devices are registered via `/proc/bus/input/devices`:
 
-| Device | Handlers | Purpose |
-|--------|----------|---------|
-| `axp2202-pek` | `event0` | Power button (`KEY_POWER`, code 116) |
-| `ANBERNIC-keys` | `event1`, `js0` | Gamepad (d-pad, face buttons) |
-| `dierct-keys-polled` | `event2` | Shoulder buttons, menu/function keys |
+| Device               | Handlers        | Purpose                              |
+| :------------------- | :-------------- | :----------------------------------- |
+| `axp2202-pek`        | `event0`        | Power button (`KEY_POWER`, code 116) |
+| `ANBERNIC-keys`      | `event1`, `js0` | Gamepad (d-pad, face buttons)        |
+| `dierct-keys-polled` | `event2`        | Shoulder buttons, menu/function keys |
 
 - **logind**: `HandlePowerKey=ignore` in `/etc/systemd/logind.conf` — systemd does not act on the power button, leaving it free for userspace handling.
 - **evtest**: Available at `/usr/bin/evtest` for debugging input events.
 
 ## Partition Layout
 
-| Device | Mount point | Filesystem | Contents |
-|--------|-------------|------------|----------|
-| `/dev/mmcblk0p5` | `/` | ext4 | Root filesystem |
-| `/dev/mmcblk0p6` | `/mnt/vendor` | ext4 | Firmware, apps, scripts |
-| `/dev/mmcblk0p7` | `/mnt/data` | ext4 | User data |
-| `/dev/mmcblk0p8` | `/mnt/mmc` | vfat | ROMs |
-| SD card slot | `/mnt/sdcard` | (varies) | External storage |
+| Device           | Mount point   | Filesystem | Contents                |
+| :--------------- | :------------ | :--------- | :---------------------- |
+| `/dev/mmcblk0p5` | `/`           | ext4       | Root filesystem         |
+| `/dev/mmcblk0p6` | `/mnt/vendor` | ext4       | Firmware, apps, scripts |
+| `/dev/mmcblk0p7` | `/mnt/data`   | ext4       | User data               |
+| `/dev/mmcblk0p8` | `/mnt/mmc`    | vfat       | ROMs                    |
+| SD card slot     | `/mnt/sdcard` | (varies)   | External storage        |
 
 ## Boot Chain
 
@@ -92,6 +92,29 @@ systemd (graphical.target)
 
 The `app_scheduling` function in `dmenu_ln` runs the selected binary. If it exits with a non-zero status, it sleeps 30 seconds before returning, which prevents crash loops from consuming all CPU. The outer `while true` loop in `loadapp.sh` then re-invokes `dmenu_ln`, restarting the application.
 
+## Framebuffer
+
+| Property       | Value                |
+| :------------- | :------------------- |
+| Device         | `/dev/fb0`           |
+| Visible size   | 640x480              |
+| Virtual size   | 640x960 (double-buf) |
+| Bits per pixel | 32 (BGRA)            |
+| Stride         | 2560 bytes (640 * 4) |
+
+No standard framebuffer image tools (`fbv`, `fbi`, `psplash`) are installed. To display a PNG on the framebuffer, decode with Python3+PIL and write raw BGRA pixels to `/dev/fb0`.
+
+## Stock Firmware Assets
+
+Shutdown-related assets in `/mnt/vendor/res1/shutdown/`:
+
+| File           | Description                     | Size    |
+| :------------- | :------------------------------ | :------ |
+| `goodbye.png`  | Shutdown screen (RGB, 640x480)  | Matches display |
+| `lowpower.png` | Low battery warning             | —       |
+
+The boot logo is at `/mnt/vendor/res1/boot/logo.png`.
+
 ## Deploying sdlamp2
 
 ### Overview
@@ -103,8 +126,8 @@ The `dmenu_ln` script already supports switching the startup binary via config f
 1. **Copy the binary and wrapper** to the device:
 
    ```sh
-   scp build/sdlamp2 root@<device>:/mnt/vendor/bin/sdlamp2
-   scp tools/rg35xx-wrapper.sh root@<device>:/mnt/vendor/bin/rg35xx-wrapper.sh
+   scp build/sdlamp2 root@rg35xx:/mnt/vendor/bin/sdlamp2
+   scp tools/rg35xx-wrapper.sh root@rg35xx:/mnt/vendor/bin/rg35xx-wrapper.sh
    ```
 
 2. **Add the config check** to `/mnt/vendor/ctrl/dmenu_ln`. In the section where `CMD` overrides are checked (after the existing `muos.ini` / `vpRun.ini` checks, before the `app_scheduling` call), add:
@@ -135,7 +158,7 @@ Everything else in the boot chain continues to work:
 
 - **Charging mode** — handled in `loadapp.sh` before the restart loop
 - **LED/backlight control** — `brightCtrl.bin` started by `launcher.sh`
-- **Clean shutdown** — sdlamp2 handles SIGTERM/SIGINT, saving position and volume before exit. The wrapper script can trigger `poweroff` after sdlamp2 exits
+- **Clean shutdown** — sdlamp2 handles SIGTERM/SIGINT, saving position and volume before exit. The wrapper displays the stock `goodbye.png` on the framebuffer and calls `poweroff`
 - **Restart on exit** — if sdlamp2 exits cleanly (status 0), the restart loop in `loadapp.sh` re-launches it immediately
 - **Crash recovery** — if sdlamp2 crashes (non-zero exit), `app_scheduling` sleeps 30s then the loop retries
 - **Easy revert** — removing `sdlamp2.ini` restores the stock menu on next boot

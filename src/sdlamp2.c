@@ -683,7 +683,9 @@ int main(int argc, char** argv) {
   SDL_Event e;
 
   while (running) {
-    if (got_signal) running = SDL_FALSE;
+    if (got_signal) {
+      running = SDL_FALSE;
+    }
 
     /* --- Event handling --- */
     while (SDL_PollEvent(&e)) {
