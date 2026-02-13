@@ -43,6 +43,10 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Power button monitor in device wrapper
+
+- **Power button handling**: The `rg35xx-wrapper.sh` script now monitors `/dev/input/event0` (`axp2202-pek`) for `KEY_POWER` press events via `evtest`. On power button press, sends SIGTERM to sdlamp2 (which saves position and volume), waits 1 second, then calls `poweroff` for a clean shutdown.
+
 ### 2026-02-13 — Clean shutdown on SIGTERM/SIGINT
 
 - **Signal handling**: sdlamp2 now catches SIGTERM and SIGINT via a `sig_atomic_t` flag checked in the main loop. On signal, the existing cleanup path runs (save position, save volume, close decoder, SDL_Quit) instead of being killed instantly. This ensures position is saved when the system shuts down or the process is terminated by a wrapper script.

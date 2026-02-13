@@ -33,6 +33,19 @@ All required shared libraries are pre-installed. Most are at `/usr/lib/`, some a
 
 Shared libraries are already present — no need to bundle or build them. A native aarch64 compile (e.g. inside the arm64 Docker container) produces working binaries. Must link against glibc ≤ 2.35.
 
+## Input Devices
+
+Three input devices are registered via `/proc/bus/input/devices`:
+
+| Device | Handlers | Purpose |
+|--------|----------|---------|
+| `axp2202-pek` | `event0` | Power button (`KEY_POWER`, code 116) |
+| `ANBERNIC-keys` | `event1`, `js0` | Gamepad (d-pad, face buttons) |
+| `dierct-keys-polled` | `event2` | Shoulder buttons, menu/function keys |
+
+- **logind**: `HandlePowerKey=ignore` in `/etc/systemd/logind.conf` — systemd does not act on the power button, leaving it free for userspace handling.
+- **evtest**: Available at `/usr/bin/evtest` for debugging input events.
+
 ## Partition Layout
 
 | Device | Mount point | Filesystem | Contents |
