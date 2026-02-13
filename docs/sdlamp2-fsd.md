@@ -48,6 +48,7 @@ This document specifies the functional requirements for an SDL2 based media play
 - **D-pad wakes screen**: The screen monitor now wakes on any input event type (EV_ABS, EV_KEY, etc.), not just EV_KEY. This fixes d-pad presses (which generate EV_ABS hat events) not waking the screen.
 - **Wake button doesn't act in app**: Uses EVIOCGRAB to take exclusive access to input devices while the screen is off. SDL in sdlamp2 receives no events while grabbed, so the button press that wakes the screen doesn't also trigger play/stop or switch cassettes. Grabs are released when the screen turns back on.
 - **Idle auto-shutdown**: After 10 minutes of no input AND no audio playback, the device auto-shuts down to save battery. Playback detection works by monitoring the audio file's read position via `/proc/<pid>/fdinfo/` — if the file offset is advancing, audio is being decoded. The timer resets on any input event or any detected playback activity.
+- **Goodbye screen on auto-shutdown**: The wrapper now restores backlight brightness via `/dev/disp` `DISP_SET_BRIGHTNESS` ioctl before writing `goodbye.png` to `/dev/fb0`. Previously the screen monitor's SIGTERM handler restored brightness, but the Allwinner driver resets it to 0 when the fd is closed, so the goodbye screen was never visible on idle auto-shutdown.
 
 ### 2026-02-13 — Remember last cassette and pause on switch
 

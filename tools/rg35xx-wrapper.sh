@@ -44,10 +44,18 @@ wait "$SCREEN_MONITOR_PID" 2>/dev/null
 # overwrite sdlamp2's shutdown screen).
 if [ -f /tmp/.sdlamp2_shutdown ]; then
   rm -f /tmp/.sdlamp2_shutdown
-  # Display the stock firmware's shutdown screen via framebuffer.
+  # Restore backlight brightness before writing the shutdown screen.
+  # The screen monitor's SIGTERM handler tries to restore brightness, but
+  # the Allwinner /dev/disp driver resets it to 0 when the fd is closed.
+  # Re-set it here so goodbye.png is actually visible.
+  # Then display the stock firmware's shutdown screen via framebuffer.
   # goodbye.png is 640x480 RGB — exactly matches the display.
   # /dev/fb0 is 32bpp BGRA, so we swap R/B channels and write raw pixels.
   python3 -c "
+import struct, fcntl
+disp = open('/dev/disp', 'wb')
+fcntl.ioctl(disp, 0x102, struct.pack('@4L', 0, 50, 0, 0))
+disp.close()
 from PIL import Image
 img = Image.open('/mnt/vendor/res1/shutdown/goodbye.png').convert('RGBA')
 r, g, b, a = img.split()
