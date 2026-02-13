@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 SDLamp2 is a simple SDL2-based audio player written in C, designed for a child to use. It plays long m4a/mp3 files (fairy tale cassette rips) with a cassette-player-like UI: rewind, stop, play, fast-forward, next tape. Inspired by Winamp.
 
 See `docs/sdlamp2-fsd.md` for the full functional specification and changelog.
+See `docs/TOOLCHAIN.md` for cross-compilation toolchain details and the aarch64 migration plan.
 
 ## Build and Run
 
