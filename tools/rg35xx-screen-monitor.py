@@ -198,8 +198,6 @@ def main():
                 if ev_type == EV_SYN:
                     continue
 
-                any_activity = True
-
                 # Power button handling (EV_KEY only)
                 if ev_type == EV_KEY and ev_code == KEY_POWER:
                     if ev_value == 1:  # press
@@ -219,6 +217,8 @@ def main():
                                 screen_on = True
                         # Between SHORT and LONG threshold: ignore (release before 3s)
                     continue
+
+                any_activity = True
 
         # Any input activity resets idle shutdown timer
         if any_activity:

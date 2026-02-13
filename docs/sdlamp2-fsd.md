@@ -43,6 +43,10 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Fix power button screen toggle regression
+
+- **Power button screen off stays off**: Fixed regression from fbd32d7 where short-pressing the power button to turn off the screen would instantly turn it back on. The generic wake logic (`any_activity`) was being triggered by power button events themselves. Moved `any_activity = True` below the power button handler's `continue` so power events are handled exclusively by the power button handler and don't trigger the wake path.
+
 ### 2026-02-13 — Screen wake fixes and idle auto-shutdown
 
 - **D-pad wakes screen**: The screen monitor now wakes on any input event type (EV_ABS, EV_KEY, etc.), not just EV_KEY. This fixes d-pad presses (which generate EV_ABS hat events) not waking the screen.
