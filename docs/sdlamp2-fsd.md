@@ -43,6 +43,12 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-13 — Combine Play/Stop, add Previous Cassette button
+
+- **Play/Stop combined**: The separate Stop and Play buttons are merged into a single toggle button that shows the play icon (▶) when paused and the stop icon (■) when playing.
+- **Previous Cassette**: A new "Previous Cassette" button is added at the left of the transport controls, mirroring "Next Cassette". Wraps from the first tape to the last.
+- **New layout**: `[Volume] [Prev] [Rewind] [Play/Stop] [FF] [Next]` — same 6 focusable elements, same positions.
+
 ### 2026-02-13 — Start paused, fix next-tape autoplay, quiet joystick log
 
 - **Start paused**: The player no longer autoplays on startup; it opens the last file at the saved position but waits for the user to press Play.

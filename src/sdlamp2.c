@@ -57,15 +57,15 @@ static int current_file_index = 0;
 /* --- Focus / navigation --- */
 
 #define FOCUS_VOLUME 0
-#define FOCUS_REWIND 1
-#define FOCUS_STOP 2
-#define FOCUS_PLAY 3
+#define FOCUS_PREV 1
+#define FOCUS_REWIND 2
+#define FOCUS_PLAYSTOP 3
 #define FOCUS_FF 4
 #define FOCUS_NEXT 5
 #define FOCUS_COUNT 6
 
 static float volume = 0.5f;
-static int focus_index = FOCUS_PLAY;
+static int focus_index = FOCUS_PLAYSTOP;
 static SDL_GameController* controller = NULL;
 static SDL_Joystick* joystick = NULL;
 static int debug_mode = 0;
@@ -494,24 +494,27 @@ static void switch_file(int index) {
 
 static void activate_focused_button(void) {
   switch (focus_index) {
+    case FOCUS_PREV:
+      if (num_audio_files > 0) {
+        int prev = (current_file_index - 1 + num_audio_files) % num_audio_files;
+        switch_file(prev);
+      }
+      break;
     case FOCUS_REWIND: {
       double pos = get_current_seconds() - SEEK_SECONDS;
       decoder_seek(pos < 0.0 ? 0.0 : pos);
       break;
     }
-    case FOCUS_STOP:
-      if (!paused) {
+    case FOCUS_PLAYSTOP:
+      if (paused && num_audio_files > 0) {
+        paused = SDL_FALSE;
+        SDL_PauseAudioDevice(audio_device, 0);
+      } else if (!paused) {
         paused = SDL_TRUE;
         SDL_PauseAudioDevice(audio_device, 1);
         if (current_file[0]) {
           save_position(current_file, get_current_seconds());
         }
-      }
-      break;
-    case FOCUS_PLAY:
-      if (paused && num_audio_files > 0) {
-        paused = SDL_FALSE;
-        SDL_PauseAudioDevice(audio_device, 0);
       }
       break;
     case FOCUS_FF: {
@@ -553,21 +556,22 @@ int main(int argc, char** argv) {
   const SDL_Rect volume_bg = {25, 390, 30, 80};
 
   /* Button positions (bottom of window, centered) */
-  const SDL_Rect rewind_btn = {80, 390, 80, 80};
-  const SDL_Rect stop_btn = {180, 390, 80, 80};
-  const SDL_Rect play_btn = {280, 390, 80, 80};
+  const SDL_Rect prev_btn = {80, 390, 80, 80};
+  const SDL_Rect rewind_btn = {180, 390, 80, 80};
+  const SDL_Rect playstop_btn = {280, 390, 80, 80};
   const SDL_Rect ff_btn = {380, 390, 80, 80};
   const SDL_Rect next_btn = {480, 390, 80, 80};
 
   /* Array of focusable rects indexed by FOCUS_* constants */
-  const SDL_Rect* focus_rects[FOCUS_COUNT] = {&volume_bg, &rewind_btn, &stop_btn,
-                                               &play_btn,  &ff_btn,     &next_btn};
+  const SDL_Rect* focus_rects[FOCUS_COUNT] = {&volume_bg,    &prev_btn, &rewind_btn,
+                                               &playstop_btn, &ff_btn,   &next_btn};
 
   /* Sprite sheet source rects */
   const SDL_Rect rewind_sprite = {0, 0, 200, 200};
   const SDL_Rect play_sprite = {220, 0, 200, 200};
   const SDL_Rect ff_sprite = {440, 0, 200, 200};
   const SDL_Rect stop_sprite = {0, 220, 200, 200};
+  const SDL_Rect prev_sprite = {440, 220, 200, 200};  /* same circle as next */
   const SDL_Rect next_sprite = {440, 220, 200, 200};
 
   /* Progress bar area */
@@ -901,9 +905,10 @@ int main(int argc, char** argv) {
     }
 
     /* Buttons */
+    SDL_RenderCopy(renderer, controls_texture, &prev_sprite, &prev_btn);
     SDL_RenderCopy(renderer, controls_texture, &rewind_sprite, &rewind_btn);
-    SDL_RenderCopy(renderer, controls_texture, &stop_sprite, &stop_btn);
-    SDL_RenderCopy(renderer, controls_texture, &play_sprite, &play_btn);
+    SDL_RenderCopy(renderer, controls_texture, paused ? &play_sprite : &stop_sprite,
+                   &playstop_btn);
     SDL_RenderCopy(renderer, controls_texture, &ff_sprite, &ff_btn);
     SDL_RenderCopy(renderer, controls_texture, &next_sprite, &next_btn);
 
