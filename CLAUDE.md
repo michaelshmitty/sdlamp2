@@ -10,17 +10,23 @@ See `docs/sdlamp2-fsd.md` for the full functional specification and changelog.
 
 ## Build and Run
 
-**Dependencies:** SDL2, SDL2_image, FFmpeg libraries (libavformat, libavcodec, libavutil, libswresample). Installed via system package manager; resolved at build time with `sdl2-config` and `pkgconf`.
+**Dependencies:** SDL2, SDL2_image, FFmpeg libraries (libavformat, libavcodec, libavutil, libswresample). Installed via system package manager (native) or into the Buildroot sysroot (cross-compile).
 
 ```sh
-./build.sh              # macOS — builds to build/sdlamp2
-./build_aarch64.sh      # Linux aarch64 variant
+make                    # native build — uses pkg-config
+make clean              # remove build artifacts
 ./build/sdlamp2 [audio_directory]
+```
+
+Cross-compilation inside the Docker toolchain container (where `CROSS_COMPILE` and `PREFIX` are set by the environment):
+
+```sh
+make                    # picks up CROSS_COMPILE and PREFIX automatically
 ```
 
 The controls spritesheet (`controls.png`) is embedded in the binary. If an external `controls.png` exists in the current working directory it takes precedence, allowing custom skins. Audio directory defaults to cwd if not specified.
 
-No test suite, no linter, no Makefile/CMake.
+No test suite, no linter.
 
 ## Architecture
 

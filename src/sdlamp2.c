@@ -49,7 +49,7 @@ static SDL_bool paused = SDL_TRUE;
 static Decoder decoder = {0};
 
 static char audio_dir[512] = ".";
-static char current_file[512] = "";
+static char current_file[256] = "";
 static char audio_files[MAX_FILES][256];
 static int num_audio_files = 0;
 static int current_file_index = 0;
@@ -111,8 +111,7 @@ static void save_position(const char* filename, double seconds) {
           snprintf(lines[num_lines], sizeof(lines[0]), "%s\t%.2f", filename, seconds);
           found = SDL_TRUE;
         } else {
-          strncpy(lines[num_lines], line, sizeof(lines[0]) - 1);
-          lines[num_lines][sizeof(lines[0]) - 1] = '\0';
+          snprintf(lines[num_lines], sizeof(lines[0]), "%s", line);
         }
         num_lines++;
       }
@@ -210,8 +209,7 @@ static void scan_audio_files(const char* dir) {
   while ((entry = readdir(d)) != NULL && num_audio_files < MAX_FILES) {
     if (entry->d_name[0] == '.') continue;
     if (has_audio_extension(entry->d_name)) {
-      strncpy(audio_files[num_audio_files], entry->d_name, 255);
-      audio_files[num_audio_files][255] = '\0';
+      snprintf(audio_files[num_audio_files], sizeof(audio_files[0]), "%s", entry->d_name);
       num_audio_files++;
     }
   }

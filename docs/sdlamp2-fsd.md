@@ -30,7 +30,7 @@ This document specifies the functional requirements for an SDL2 based media play
 ## 4. Design principles
 
 - Version control (git) must be used
-- Compilation should be performed by a simple shell script or batch file, not a complicated build system like make or cmake
+- Compilation should be performed by a simple Makefile supporting both native and cross-compilation
 - C source code files should be formatted using "Google" style with an additional change of `ColumnLimit` set to 100
 - Less is more, minimize dependencies, avoid pulling in extra libraries, always talk through with owner first
 - Keep it simple, apply Casey Muratori's `semantic compression` principles, don't refactor too soon or write code that's too clever for its own good
@@ -42,6 +42,10 @@ This document specifies the functional requirements for an SDL2 based media play
 - **Development/testing**: macOS Apple Silicon
 
 ## 6. Changelog
+
+### 2026-02-13 — Replace build scripts with Makefile
+
+- **Makefile**: Replaced `build.sh` (macOS) and `build_aarch64.sh` (Linux ARM) with a single `Makefile`. Native builds use `pkg-config` to resolve SDL2 and FFmpeg flags; cross-compilation uses `CROSS_COMPILE` and `PREFIX` environment variables set by the Docker/Buildroot toolchain.
 
 ### 2026-02-13 — Raw joystick fallback for non-standard controllers
 
