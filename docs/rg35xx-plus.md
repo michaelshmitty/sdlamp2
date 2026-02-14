@@ -143,8 +143,8 @@ The `dmenu_ln` script already supports switching the startup binary via config f
 
    ```sh
    scp build/sdlamp2 root@rg35xx:/mnt/vendor/bin/sdlamp2
-   scp tools/rg35xx-wrapper.sh root@rg35xx:/mnt/vendor/bin/rg35xx-wrapper.sh
-   scp tools/rg35xx-screen-monitor.py root@rg35xx:/mnt/vendor/bin/rg35xx-screen-monitor.py
+   scp device/rg35xx/rg35xx-wrapper.sh root@rg35xx:/mnt/vendor/bin/rg35xx-wrapper.sh
+   scp device/rg35xx/rg35xx-screen-monitor.py root@rg35xx:/mnt/vendor/bin/rg35xx-screen-monitor.py
    ```
 
 2. **Add the config check** to `/mnt/vendor/ctrl/dmenu_ln`. In the section where `CMD` overrides are checked (after the existing `muos.ini` / `vpRun.ini` checks, before the `app_scheduling` call), add:
@@ -155,7 +155,7 @@ The `dmenu_ln` script already supports switching the startup binary via config f
    fi
    ```
 
-   The wrapper script handles device-specific concerns (WiFi hotspot, power button monitoring) and launches sdlamp2 as its main foreground process. See `tools/rg35xx-wrapper.sh` for details.
+   The wrapper script handles device-specific concerns (WiFi hotspot, power button monitoring) and launches sdlamp2 as its main foreground process. See `device/rg35xx/rg35xx-wrapper.sh` for details.
 
 3. **Enable sdlamp2 on boot:**
 

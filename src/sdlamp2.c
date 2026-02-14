@@ -612,7 +612,7 @@ int main(int argc, char** argv) {
   const SDL_Rect play_sprite = {220, 0, 200, 200};
   const SDL_Rect ff_sprite = {440, 0, 200, 200};
   const SDL_Rect stop_sprite = {0, 220, 200, 200};
-  const SDL_Rect prev_sprite = {440, 220, 200, 200};
+  const SDL_Rect prev_sprite = {220, 220, 200, 200};
   const SDL_Rect next_sprite = {440, 220, 200, 200};
   const SDL_Rect circle_sprite = {440, 220, 200, 200}; /* placeholder for no-art */
 

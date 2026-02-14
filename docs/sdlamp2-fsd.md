@@ -43,6 +43,12 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-14 — Skin template system and device script reorganization
+
+- **Skin template generator**: New `tools/gen_skin_template.py` (requires Pillow) generates a 642x420 PNG template showing the sprite grid layout with labeled gutters. Skin creators can draw over the white 200x200 cells; the 20px gray gutters (never rendered by the app) identify each cell's purpose.
+- **Separate Prev sprite**: `prev_sprite` now uses the bottom-center cell `{220, 220}` instead of sharing the bottom-right cell with `next_sprite`. This gives Prev and Next distinct sprites in the spritesheet.
+- **Device scripts moved**: `rg35xx-wrapper.sh` and `rg35xx-screen-monitor.py` moved from `tools/` to `device/rg35xx/`, separating device-specific scripts from dev tools.
+
 ### 2026-02-14 — Softer background, remove panel divider
 
 - **Background color**: Changed from white (`#FFFFFF`) to a medium gray (`#979797`) for a gentler appearance.
