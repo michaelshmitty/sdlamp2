@@ -43,6 +43,10 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ## 6. Changelog
 
+### 2026-02-14 — Fix residual audio on cassette switch
+
+- **Clear device queue on switch**: `switch_file()` now calls `SDL_ClearQueuedAudio()` after pausing the audio device, preventing a brief snippet of the previous cassette from playing when the new one starts.
+
 ### 2026-02-14 — Split-screen layout with artwork focus
 
 - **Vertical left panel**: Transport controls (Prev, Rewind, Play/Stop, FF, Next) are stacked vertically in a 200px-wide left panel. Play/Stop is slightly larger (72x72) at the vertical center; other buttons are 56x56.

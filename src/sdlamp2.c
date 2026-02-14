@@ -522,6 +522,7 @@ static void switch_file(int index) {
 
       paused = SDL_TRUE;
       SDL_PauseAudioDevice(audio_device, 1);
+      SDL_ClearQueuedAudio(audio_device);
       return;
     }
 
