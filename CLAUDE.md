@@ -17,7 +17,7 @@ See `docs/rg35xx-plus.md` for target device details, boot chain, and deployment.
 ```sh
 make                    # native build — uses pkg-config
 make clean              # remove build artifacts
-./build/sdlamp2 [audio_directory]
+./build/sdlamp2 audio   # run with the repo's audio directory
 ```
 
 Building for the arm64 target device via the Docker container (from the `docker-arm64/` directory):

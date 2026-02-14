@@ -915,7 +915,7 @@ int main(int argc, char** argv) {
     }
 
     /* --- Rendering --- */
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_SetRenderDrawColor(renderer, 0xE8, 0xE8, 0xE8, 0xFF);
     SDL_RenderClear(renderer);
 
     /* Album art (right panel, centered, aspect-preserving) */
@@ -948,10 +948,6 @@ int main(int argc, char** argv) {
       SDL_SetRenderDrawColor(renderer, 0x50, 0x50, 0x50, 0xFF);
       SDL_RenderFillRect(renderer, &fill);
     }
-
-    /* Separator line between left panel and right panel */
-    SDL_SetRenderDrawColor(renderer, 0xC0, 0xC0, 0xC0, 0xFF);
-    SDL_RenderDrawLine(renderer, 200, 10, 200, 470);
 
     /* Buttons */
     SDL_RenderCopy(renderer, controls_texture, &prev_sprite, &prev_btn);
