@@ -699,6 +699,7 @@ int main(int argc, char** argv) {
   if (!controls_texture) {
     panic_and_abort("Could not create controls texture!", SDL_GetError());
   }
+  SDL_SetTextureBlendMode(controls_texture, SDL_BLENDMODE_BLEND);
 
   /* Handle SIGTERM/SIGINT for clean shutdown (save position before exit) */
   signal(SIGTERM, signal_handler);
@@ -957,11 +958,11 @@ int main(int argc, char** argv) {
     SDL_RenderCopy(renderer, controls_texture, &ff_sprite, &ff_btn);
     SDL_RenderCopy(renderer, controls_texture, &next_sprite, &next_btn);
 
-    /* Focus highlight — 3px blue border around focused element */
+    /* Focus highlight — 3px red border around focused element */
     {
       const SDL_Rect r = *focus_rects[focus_index];
       const int t = 3;
-      SDL_SetRenderDrawColor(renderer, 0x00, 0x80, 0xFF, 0xFF);
+      SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
       SDL_Rect top = {r.x - t, r.y - t, r.w + 2 * t, t};
       SDL_Rect bot = {r.x - t, r.y + r.h, r.w + 2 * t, t};
       SDL_Rect lft = {r.x - t, r.y, t, r.h};

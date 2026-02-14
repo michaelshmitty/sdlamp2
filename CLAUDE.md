@@ -56,3 +56,4 @@ Uses SDL2 (not SDL3). Uses `#if LIBAVUTIL_VERSION_INT` preprocessor checks to su
 - Non-fatal errors go to stderr and continue; fatal errors (SDL init failures) abort via `panic_and_abort()`
 - Update the changelog in `docs/sdlamp2-fsd.md` when making changes
 - Never run privileged Docker containers or make system-wide changes without explicit approval; explain what's needed and let the owner do it manually
+- Never install global Python packages; use a temporary venv in `/tmp` when Python dependencies are needed (e.g. `python3 -m venv /tmp/venv && source /tmp/venv/bin/activate && pip install ...`)

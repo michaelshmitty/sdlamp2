@@ -7,7 +7,7 @@
 | Version | 1.0        |
 | Status  | Draft      |
 | Created | 2026-02-10 |
-| Updated | 2026-02-14 |
+| Updated | 2026-02-15 |
 
 ## 1. Purpose
 
@@ -42,6 +42,11 @@ This document specifies the functional requirements for an SDL2 based media play
 - **Development/testing**: macOS Apple Silicon
 
 ## 6. Changelog
+
+### 2026-02-15 — Transparent controls spritesheet support
+
+- **Alpha blending on controls texture**: `SDL_SetTextureBlendMode(controls_texture, SDL_BLENDMODE_BLEND)` enables alpha transparency for the controls spritesheet. Sprite icons now float cleanly on any background color instead of showing white cell backgrounds.
+- **Transparent skin template**: `gen_skin_template.py` now generates cells with transparent backgrounds (RGBA) instead of white. Gutters use bright magenta (`#FF00FF`) so they're clearly distinguishable from transparent content areas.
 
 ### 2026-02-14 — Skin template system and device script reorganization
 

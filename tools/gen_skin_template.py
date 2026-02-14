@@ -3,8 +3,8 @@
 gen_skin_template.py — Generate a skin template PNG for sdlamp2.
 
 Creates a 642x420 PNG showing the sprite grid layout with labeled gutters.
-Each 200x200 cell is blank white (ready to draw on). The 20px gutters between
-cells are gray with small text labels identifying adjacent cells.
+Each 200x200 cell is transparent (ready to draw on). The 20px gutters between
+cells are a bright magenta so they're clearly distinguishable from content areas.
 
 Grid layout:
   Col 0 (0-199)    Col 1 (220-419)   Col 2 (440-639)
@@ -30,9 +30,9 @@ ROWS = 2
 WIDTH = COLS * CELL + (COLS - 1) * GAP + 2   # 642
 HEIGHT = ROWS * CELL + (ROWS - 1) * GAP       # 420
 
-CELL_COLOR = (255, 255, 255)
-GUTTER_COLOR = (180, 180, 180)
-TEXT_COLOR = (80, 80, 80)
+CELL_COLOR = (0, 0, 0, 0)
+GUTTER_COLOR = (255, 0, 255, 255)
+TEXT_COLOR = (255, 255, 255, 255)
 
 LABELS = [
     ["REWIND", "PLAY", "FF"],
@@ -51,7 +51,7 @@ def cell_y(row):
 def main():
     output_path = sys.argv[1] if len(sys.argv) > 1 else "skin_template.png"
 
-    img = Image.new("RGB", (WIDTH, HEIGHT), GUTTER_COLOR)
+    img = Image.new("RGBA", (WIDTH, HEIGHT), GUTTER_COLOR)
     draw = ImageDraw.Draw(img)
 
     # Try to load a small font for labels
