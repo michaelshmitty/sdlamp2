@@ -66,13 +66,12 @@ static int current_file_index = 0;
 
 /* --- Focus / navigation --- */
 
-#define FOCUS_VOLUME 0
-#define FOCUS_PREV 1
-#define FOCUS_REWIND 2
-#define FOCUS_PLAYSTOP 3
-#define FOCUS_FF 4
-#define FOCUS_NEXT 5
-#define FOCUS_COUNT 6
+#define FOCUS_PREV 0
+#define FOCUS_REWIND 1
+#define FOCUS_PLAYSTOP 2
+#define FOCUS_FF 3
+#define FOCUS_NEXT 4
+#define FOCUS_COUNT 5
 
 static float volume = 0.5f;
 static int focus_index = FOCUS_PLAYSTOP;
@@ -596,30 +595,28 @@ int main(int argc, char** argv) {
     audio_dir[sizeof(audio_dir) - 1] = '\0';
   }
 
-  /* Volume slider (left of buttons) */
-  const SDL_Rect volume_bg = {25, 390, 30, 80};
-
-  /* Button positions (bottom of window, centered) */
-  const SDL_Rect prev_btn = {80, 390, 80, 80};
-  const SDL_Rect rewind_btn = {180, 390, 80, 80};
-  const SDL_Rect playstop_btn = {280, 390, 80, 80};
-  const SDL_Rect ff_btn = {380, 390, 80, 80};
-  const SDL_Rect next_btn = {480, 390, 80, 80};
+  /* Left panel: buttons stacked vertically, centered at x=100 */
+  const SDL_Rect prev_btn = {72, 34, 56, 56};
+  const SDL_Rect rewind_btn = {72, 120, 56, 56};
+  const SDL_Rect playstop_btn = {64, 206, 72, 72};
+  const SDL_Rect ff_btn = {72, 308, 56, 56};
+  const SDL_Rect next_btn = {72, 394, 56, 56};
 
   /* Array of focusable rects indexed by FOCUS_* constants */
-  const SDL_Rect* focus_rects[FOCUS_COUNT] = {&volume_bg,    &prev_btn, &rewind_btn,
-                                               &playstop_btn, &ff_btn,   &next_btn};
+  const SDL_Rect* focus_rects[FOCUS_COUNT] = {&prev_btn, &rewind_btn, &playstop_btn, &ff_btn,
+                                               &next_btn};
 
   /* Sprite sheet source rects */
   const SDL_Rect rewind_sprite = {0, 0, 200, 200};
   const SDL_Rect play_sprite = {220, 0, 200, 200};
   const SDL_Rect ff_sprite = {440, 0, 200, 200};
   const SDL_Rect stop_sprite = {0, 220, 200, 200};
-  const SDL_Rect prev_sprite = {440, 220, 200, 200};  /* same circle as next */
+  const SDL_Rect prev_sprite = {440, 220, 200, 200};
   const SDL_Rect next_sprite = {440, 220, 200, 200};
+  const SDL_Rect circle_sprite = {440, 220, 200, 200}; /* placeholder for no-art */
 
-  /* Progress bar area */
-  const SDL_Rect progress_bg = {20, 360, 600, 15};
+  /* Progress bar — thin bar at bottom of left panel */
+  const SDL_Rect progress_bg = {20, 466, 160, 4};
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0) {
     panic_and_abort("SDL_Init failed!", SDL_GetError());
@@ -682,6 +679,8 @@ int main(int argc, char** argv) {
       }
     }
   }
+
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
   SDL_Surface* controls_surface = IMG_Load("controls.png");
   if (!controls_surface) {
@@ -788,17 +787,20 @@ int main(int argc, char** argv) {
 
         case SDL_KEYDOWN:
           switch (e.key.keysym.sym) {
-            case SDLK_LEFT:
+            case SDLK_UP:
               focus_index = (focus_index - 1 + FOCUS_COUNT) % FOCUS_COUNT;
               break;
-            case SDLK_RIGHT:
+            case SDLK_DOWN:
               focus_index = (focus_index + 1) % FOCUS_COUNT;
               break;
-            case SDLK_UP:
-              if (focus_index == FOCUS_VOLUME) adjust_volume(0.05f);
+            case SDLK_EQUALS:
+            case SDLK_PLUS:
+            case SDLK_VOLUMEUP:
+              adjust_volume(0.05f);
               break;
-            case SDLK_DOWN:
-              if (focus_index == FOCUS_VOLUME) adjust_volume(-0.05f);
+            case SDLK_MINUS:
+            case SDLK_VOLUMEDOWN:
+              adjust_volume(-0.05f);
               break;
             case SDLK_RETURN:
             case SDLK_KP_ENTER:
@@ -809,17 +811,17 @@ int main(int argc, char** argv) {
 
         case SDL_CONTROLLERBUTTONDOWN:
           switch (e.cbutton.button) {
-            case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            case SDL_CONTROLLER_BUTTON_DPAD_UP:
               focus_index = (focus_index - 1 + FOCUS_COUNT) % FOCUS_COUNT;
               break;
-            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
               focus_index = (focus_index + 1) % FOCUS_COUNT;
               break;
-            case SDL_CONTROLLER_BUTTON_DPAD_UP:
-              if (focus_index == FOCUS_VOLUME) adjust_volume(0.05f);
+            case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+              adjust_volume(-0.05f);
               break;
-            case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-              if (focus_index == FOCUS_VOLUME) adjust_volume(-0.05f);
+            case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+              adjust_volume(0.05f);
               break;
             case SDL_CONTROLLER_BUTTON_A:
               activate_focused_button();
@@ -829,14 +831,10 @@ int main(int argc, char** argv) {
 
         case SDL_JOYHATMOTION: {
           Uint8 hat = e.jhat.value;
-          if (hat & SDL_HAT_LEFT) {
+          if (hat & SDL_HAT_UP) {
             focus_index = (focus_index - 1 + FOCUS_COUNT) % FOCUS_COUNT;
-          } else if (hat & SDL_HAT_RIGHT) {
-            focus_index = (focus_index + 1) % FOCUS_COUNT;
-          } else if (hat & SDL_HAT_UP) {
-            if (focus_index == FOCUS_VOLUME) adjust_volume(0.05f);
           } else if (hat & SDL_HAT_DOWN) {
-            if (focus_index == FOCUS_VOLUME) adjust_volume(-0.05f);
+            focus_index = (focus_index + 1) % FOCUS_COUNT;
           }
           break;
         }
@@ -919,16 +917,20 @@ int main(int argc, char** argv) {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderClear(renderer);
 
-    /* Album art (centered, aspect-preserving, in upper area) */
+    /* Album art (right panel, centered, aspect-preserving) */
     if (decoder.album_art && decoder.art_width > 0 && decoder.art_height > 0) {
-      int max_w = 600, max_h = 340;
+      int max_w = 420, max_h = 460;
       float scale_w = (float)max_w / decoder.art_width;
       float scale_h = (float)max_h / decoder.art_height;
       float scale = scale_w < scale_h ? scale_w : scale_h;
       int draw_w = (int)(decoder.art_width * scale);
       int draw_h = (int)(decoder.art_height * scale);
-      SDL_Rect art_rect = {(640 - draw_w) / 2, (350 - draw_h) / 2, draw_w, draw_h};
+      SDL_Rect art_rect = {420 - draw_w / 2, 240 - draw_h / 2, draw_w, draw_h};
       SDL_RenderCopy(renderer, decoder.album_art, NULL, &art_rect);
+    } else {
+      /* No-art placeholder: circle sprite scaled up in right panel */
+      SDL_Rect placeholder = {420 - 100, 240 - 100, 200, 200};
+      SDL_RenderCopy(renderer, controls_texture, &circle_sprite, &placeholder);
     }
 
     /* Progress bar */
@@ -946,15 +948,9 @@ int main(int argc, char** argv) {
       SDL_RenderFillRect(renderer, &fill);
     }
 
-    /* Volume slider */
+    /* Separator line between left panel and right panel */
     SDL_SetRenderDrawColor(renderer, 0xC0, 0xC0, 0xC0, 0xFF);
-    SDL_RenderFillRect(renderer, &volume_bg);
-    {
-      int fill_h = (int)(volume_bg.h * volume);
-      SDL_Rect vol_fill = {volume_bg.x, volume_bg.y + volume_bg.h - fill_h, volume_bg.w, fill_h};
-      SDL_SetRenderDrawColor(renderer, 0x50, 0x50, 0x50, 0xFF);
-      SDL_RenderFillRect(renderer, &vol_fill);
-    }
+    SDL_RenderDrawLine(renderer, 200, 10, 200, 470);
 
     /* Buttons */
     SDL_RenderCopy(renderer, controls_texture, &prev_sprite, &prev_btn);

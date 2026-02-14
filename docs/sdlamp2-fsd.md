@@ -7,7 +7,7 @@
 | Version | 1.0        |
 | Status  | Draft      |
 | Created | 2026-02-10 |
-| Updated | 2026-02-13 |
+| Updated | 2026-02-14 |
 
 ## 1. Purpose
 
@@ -42,6 +42,16 @@ This document specifies the functional requirements for an SDL2 based media play
 - **Development/testing**: macOS Apple Silicon
 
 ## 6. Changelog
+
+### 2026-02-14 — Split-screen layout with artwork focus
+
+- **Vertical left panel**: Transport controls (Prev, Rewind, Play/Stop, FF, Next) are stacked vertically in a 200px-wide left panel. Play/Stop is slightly larger (72x72) at the vertical center; other buttons are 56x56.
+- **Full-height artwork**: Album art now fills the right panel (420x460 max bounds, centered at x=420, y=240), giving cassette covers nearly the full screen height instead of being constrained to the upper portion.
+- **Vertical navigation**: D-pad UP/DOWN (and keyboard arrows) now navigate between buttons vertically instead of LEFT/RIGHT horizontally, matching the new stacked layout.
+- **Dedicated volume controls**: Volume is no longer a focusable UI element. Adjusted via `+`/`-` keys, `SDLK_VOLUMEUP`/`SDLK_VOLUMEDOWN`, or controller shoulder buttons (L1/R1).
+- **Sprite scaling quality**: Linear filtering (`SDL_HINT_RENDER_SCALE_QUALITY`) enabled for smoother downscaling of 200x200 sprite source to 56x56 button destinations.
+- **No-art placeholder**: When a file has no embedded album art, a circle sprite from the spritesheet is rendered as a placeholder in the right panel.
+- **Thin progress bar**: Progress bar moved to the bottom of the left panel (160x4px) as a subtle position indicator.
 
 ### 2026-02-13 — Fix power button screen toggle regression
 
