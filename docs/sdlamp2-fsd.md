@@ -45,7 +45,7 @@ This document specifies the functional requirements for an SDL2 based media play
 
 ### 2026-02-14 — Softer background, remove panel divider
 
-- **Background color**: Changed from white (`#FFFFFF`) to a soft gray (`#E8E8E8`) for a gentler appearance.
+- **Background color**: Changed from white (`#FFFFFF`) to a medium gray (`#979797`) for a gentler appearance.
 - **Remove divider**: Removed the vertical separator line between the controls panel and the album art.
 
 ### 2026-02-14 — Fix residual audio on cassette switch

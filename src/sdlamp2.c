@@ -915,7 +915,7 @@ int main(int argc, char** argv) {
     }
 
     /* --- Rendering --- */
-    SDL_SetRenderDrawColor(renderer, 0xE8, 0xE8, 0xE8, 0xFF);
+    SDL_SetRenderDrawColor(renderer, 0x97, 0x97, 0x97, 0xFF);
     SDL_RenderClear(renderer);
 
     /* Album art (right panel, centered, aspect-preserving) */
